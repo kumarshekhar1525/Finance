@@ -52,12 +52,40 @@ interface AdminDashboardProps {
 
 interface ChatLogItem {
   id: string;
-  message: string;
-  response: string;
-  source: string;
-  language: string;
+  message?: string;
+  userQuestion?: string;
+  response?: string;
+  botResponse?: string;
+  source?: string;
+  language?: string;
   timestamp: string;
+  citizenName?: string;
 }
+
+const formatSafeDate = (ts: string | undefined): string => {
+  if (!ts) {
+    return new Date().toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+  try {
+    const d = new Date(ts);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
+  } catch (e) {}
+  return `${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} ${ts}`;
+};
 
 const ALL_CITIZEN_PROFILES = [
   {
@@ -1010,7 +1038,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {log.query}
                         </td>
                         <td className="py-3 px-4 text-slate-400 font-mono text-[11px]">
-                          {new Date(log.timestamp).toLocaleString('en-IN')}
+                          {formatSafeDate(log.timestamp)}
                         </td>
                         <td className="py-3 px-4 font-bold text-slate-700 dark:text-slate-300">
                           {log.resultsCount} Schemes Found
@@ -1081,23 +1109,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     chatLogs.map((item) => (
                       <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                         <td className="py-3.5 px-4 text-slate-400 font-mono text-[11px] shrink-0">
-                          {new Date(item.timestamp).toLocaleString('en-IN')}
+                          {formatSafeDate(item.timestamp)}
                         </td>
                         <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
                           <div className="flex items-center gap-1.5">
                             <MessageSquare className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                            <span>{item.message}</span>
+                            <span>{item.message || item.userQuestion || 'PMEGP / Mudra Loan Query'}</span>
                           </div>
                         </td>
                         <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 max-w-md">
                           <p className="line-clamp-2 text-[11px] font-mono leading-relaxed bg-slate-50 dark:bg-slate-800/60 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
-                            {item.response}
+                            {item.response || item.botResponse || 'AI Sahayak Loan Advisory'}
                           </p>
                         </td>
                         <td className="py-3.5 px-4">
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border border-purple-200">
                             <Sparkles className="w-3 h-3 text-purple-500" />
-                            {item.source}
+                            {item.source || 'JanDhan AI Sahayak'}
                           </span>
                         </td>
                       </tr>

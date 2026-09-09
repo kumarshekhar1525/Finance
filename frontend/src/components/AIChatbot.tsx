@@ -144,9 +144,12 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ currentLang }) => {
       try {
         const newLog = {
           id: `chat-log-${Date.now()}`,
+          message: query,
           userQuestion: query,
+          response: botReply,
           botResponse: botReply,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          source: 'JanDhan AI Sahayak',
+          timestamp: new Date().toISOString(),
           citizenName: 'Citizen User',
         };
         const savedStr = localStorage.getItem('jandhan_chat_logs');
@@ -170,9 +173,12 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ currentLang }) => {
       try {
         const newLog = {
           id: `chat-log-${Date.now()}`,
+          message: query,
           userQuestion: query,
+          response: botReply,
           botResponse: botReply,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          source: 'JanDhan AI Sahayak',
+          timestamp: new Date().toISOString(),
           citizenName: 'Citizen User',
         };
         const savedStr = localStorage.getItem('jandhan_chat_logs');
