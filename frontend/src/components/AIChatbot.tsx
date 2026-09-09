@@ -1,0 +1,393 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { 
+  Bot, 
+  Send, 
+  X, 
+  Sparkles, 
+  Volume2, 
+  VolumeX, 
+  RefreshCw, 
+  Mic,
+  MicOff,
+  User, 
+  ShieldCheck,
+  Minimize2,
+  Maximize2
+} from 'lucide-react';
+import { SupportedLanguage } from '../types';
+
+interface AIChatbotProps {
+  currentLang: SupportedLanguage;
+}
+
+interface Message {
+  id: string;
+  sender: 'user' | 'bot';
+  text: string;
+  timestamp: string;
+}
+
+export const AIChatbot: React.FC<AIChatbotProps> = ({ currentLang }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 'msg-welcome',
+      sender: 'bot',
+      text:
+        currentLang === 'hi'
+          ? 'नमस्ते! मैं आपका जनधन डिजिटल ऋण सहायक (AI Loan Sahayak) हूँ। आप मुझसे PMEGP 35% सब्सिडी, मुद्रा लोन, विश्वकर्मा योजना, किसान क्रेडिट कार्ड, शिक्षा ऋण या दस्तावेज़ सत्यापन के बारे में हिंदी या इंग्लिश में कुछ भी पूछ सकते हैं।'
+          : 'Namaste! I am your JanDhan AI Loan Sahayak. Ask me about Central Govt Loan Schemes, 35% Capital Subsidies, MUDRA, KCC 4%, or Document Eligibility in English, Hindi or Hinglish.',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    },
+  ]);
+
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      scrollToBottom();
+    }
+  }, [messages, isOpen]);
+
+  // Expert Banking Knowledge Helper for Fallback Answers
+  const getLocalBankingResponse = (query: string, lang: string): string => {
+    const q = query.toLowerCase();
+
+    if (q.includes('pmegp') || q.includes('subsidy') || q.includes('सब्सिडी') || q.includes('35%')) {
+      return lang === 'hi'
+        ? `**PMEGP (प्रधानमंत्री रोजगार सृजन कार्यक्रम) 35% सब्सिडी की संपूर्ण जानकारी:**\n\n• **सब्सिडी दर:** ग्रामीण क्षेत्रों में SC/ST, ओबीसी (OBC), महिलाओं, दिव्यांगों व भूतपूर्व सैनिकों को **35% तक सब्सिडी** मिलती है (शहरी क्षेत्रों में 25%)। सामान्य श्रेणी हेतु ग्रामीण में 25% व शहरी में 15%।\n• **अधिकतम ऋण सीमा:** मैन्युफैक्चरिंग (निर्माण) उद्योग हेतु **₹50 लाख** तक तथा सर्विस (सेवा) उद्योग हेतु **₹20 लाख** तक।\n• **बिना गारंटी (No Collateral):** ₹10 लाख तक किसी भी संपत्ति बंधक या तीसरे पक्ष की गारंटी की आवश्यकता नहीं है (CGTMSE गारंटी)।\n• **जरूरी कागजात:** 1. आधार कार्ड 2. पैन कार्ड 3. जाति प्रमाण पत्र (SC/ST/OBC) 4. 8वीं पास मार्कशीट 5. प्रोजेक्ट रिपोर्ट (DPR)।\n\nआप इस पोर्टल पर "पात्रता चेकर" टैब में अपने कागजात जांचकर सीधे ऑनलाइन आवेदन कर सकते हैं!`
+        : `**PMEGP 35% Capital Subsidy Scheme Details:**\n\n• **Subsidy Percentage:** Up to **35% Capital Subsidy** for SC/ST, OBC, Women, and Rural applicants (25% for urban). General category gets 25% rural / 15% urban.\n• **Loan Quantum:** Up to **₹50 Lakhs** for Manufacturing projects & **₹20 Lakhs** for Service sector.\n• **Zero Security:** No collateral required for loans up to ₹10 Lakhs (Covered under CGTMSE).\n• **Documents Needed:** Aadhaar Card, PAN Card, Caste Certificate, 8th Marksheet, and Project Report (DPR).\n\nYou can verify your documents and apply online directly on this portal!`;
+    }
+
+    if (q.includes('mudra') || q.includes('मुद्रा') || q.includes('chota loan') || q.includes('छोटा')) {
+      return lang === 'hi'
+        ? `**प्रधानमंत्री मुद्रा योजना (PMMY) की मुख्य विशेषताएं:**\n\n1. **शिशु लोन (Shishu):** ₹50,000 तक (बिना किसी प्रोसेसिंग शुल्क के तत्काल ऋण)।\n2. **किशोर लोन (Kishor):** ₹50,001 से ₹5,00,000 तक।\n3. **तरुण लोन (Tarun):** ₹5,00,001 से ₹20,00,000 तक।\n\n• **ब्याज दर:** 7.9% से 9.5% प्रति वर्ष।\n• **गारंटी:** 100% संपार्श्विक-मुक्त (NCGTC सुरक्षा)।\n• **आवश्यक कागजात:** आधार कार्ड, पैन कार्ड, बिजनेस का प्रमाण और 6 महीने की बैंक पासबुक।`
+        : `**Pradhan Mantri MUDRA Yojana (PMMY) Summary:**\n\n1. **Shishu:** Up to ₹50,000 (Zero processing fees for micro enterprises).\n2. **Kishor:** ₹50,001 to ₹5,00,000.\n3. **Tarun:** ₹5,00,001 to ₹20,00,000.\n\n• **Interest Rate:** 7.9% to 9.5% p.a.\n• **Collateral:** 100% Collateral-Free (backed by NCGTC).\n• **Required Documents:** Aadhaar, PAN, Business proof, and 6-month Bank Statement.`;
+    }
+
+    if (q.includes('vishwakarma') || q.includes('विश्वकर्मा') || q.includes('artisan') || q.includes('कारीगर')) {
+      return lang === 'hi'
+        ? `**पीएम विश्वकर्मा योजना (PM Vishwakarma) की जानकारी:**\n\n• **रियायती ब्याज दर:** मात्र **5% निश्चित ब्याज दर** (8% सब्सिडी सरकार वहन करती है)।\n• **ऋण राशि:** 1st चरण में ₹1,00,000 (18 महीने) एवं 2nd चरण में ₹2,00,000 (30 महीने)।\n• **टूलकिट वाउचर:** आधुनिक औजार हेतु **₹15,000 निःशुल्क ई-वाउचर** अनुदान।\n• **दैनिक स्टाइपेंड:** 5 दिवसीय प्रशिक्षण अवधि में ₹500 प्रतिदिन सहायता भत्ता।`
+        : `**PM Vishwakarma Scheme Highlights:**\n\n• **Subsidized Interest:** Flat **5% interest rate** (Govt provides 8% interest subvention).\n• **Loan Credit:** Tranche 1: ₹1 Lakh (18 Mo), Tranche 2: ₹2 Lakhs (30 Mo).\n• **Toolkit Voucher:** **₹15,000 Free E-Voucher** for modern toolkits.\n• **Stipend:** ₹500/day during 5-day skill training.`;
+    }
+
+    if (q.includes('kcc') || q.includes('kisan') || q.includes('किसान') || q.includes('crop') || q.includes('खेती')) {
+      return lang === 'hi'
+        ? `**किसान क्रेडिट कार्ड (KCC) 4% ब्याज योजना:**\n\n• **ब्याज छूट:** सामान्य ब्याज 7% है, परंतु समय पर भुगतान करने पर **3% अतिरिक्त छूट** मिलती है, जिससे प्रभावी ब्याज केवल **4% प्रति वर्ष** रह जाता है।\n• **ऋण सीमा:** ₹1.60 लाख तक बिना किसी जमीन बंधक के, तथा भूमि खतौनी पर ₹3.00 लाख तक।\n• **दस्तावेज़:** आधार कार्ड, पैन कार्ड, और जमीन की खसरा-खतौनी / खतियान की नकल।`
+        : `**Kisan Credit Card (KCC) 4% Interest Scheme:**\n\n• **Effective Interest:** Base 7% p.a. - 3% prompt repayment incentive = **4% Effective Interest**.\n• **Collateral Limit:** Up to ₹1.60 Lakhs collateral-free (Up to ₹3.00 Lakhs on land records).\n• **Required Documents:** Aadhaar, PAN, and Land Record (Khasra/Khatauni).`;
+    }
+
+    if (q.includes('vidya') || q.includes('study') || q.includes('education') || q.includes('विद्या') || q.includes('पढ़ाई')) {
+      return lang === 'hi'
+        ? `**पीएम विद्यालक्ष्मी एवं CSIS शिक्षा ऋण योजना:**\n\n• **100% ब्याज छूट (CSIS):** कोर्स अवधि तथा 1 वर्ष के मोराटोरियम समय तक पूरा ब्याज केंद्र सरकार वहन करती है (वार्षिक आय ₹4.50 लाख तक)।\n• **ऋण सीमा:** देश में पढ़ाई हेतु ₹7.50 लाख तक (बिना किसी संपत्ति गारंटी के) एवं विदेश में पढ़ाई हेतु ₹1 करोड़ तक।\n• **माइनर छात्र:** 18 वर्ष से कम आयु के छात्र हेतु माता/पिता सह-आवेदक (Co-applicant) के रूप में आधार व आय प्रमाण पत्र संलग्न करेंगे।`
+        : `**PM Vidya Lakshmi & CSIS Education Loan Scheme:**\n\n• **100% Full Interest Subsidy (CSIS):** Govt pays 100% interest during course + 1 year moratorium for families with income up to ₹4.5 Lakhs.\n• **No Guarantee Limit:** Up to ₹7.50 Lakhs collateral-free with NCEGTT guarantee.\n• **Minor Applicants:** Parents act as co-borrowers with Aadhaar and Income Proof.`;
+    }
+
+    return lang === 'hi'
+      ? `**जनधन एआई ऋण सहायक सलाह:**\n\n• आप भारत सरकार की मुख्य योजनाओं (PMEGP 35% सब्सिडी, मुद्रा ₹20 लाख, पीएम विश्वकर्मा 5% ब्याज, किसान क्रेडिट कार्ड 4%, पीएम विद्यालक्ष्मी शिक्षा ऋण) हेतु 100% डिजिटल ऑनलाइन आवेदन कर सकते हैं।\n• **आवेदन प्रक्रिया:** "दस्तावेज़ पात्रता चेकर" पर जाकर अपने आधार व पैन कार्ड से तुरंत पात्रता जांचें तथा बिना बैंक चक्कर लगाए आवेदन जमा करें।`
+      : `**JanDhan AI Advisory:**\n\n• You can apply 100% online for all Central Govt Loan Schemes (PMEGP 35% Subsidy, MUDRA ₹20L, PM Vishwakarma 5%, KCC 4%, Vidya Lakshmi Education Loans).\n• **How to Apply:** Click "Check Eligibility", scan your Aadhaar & PAN card to receive instant digital approval!`;
+  };
+
+  const handleSendMessage = async (textToSend?: string) => {
+    const query = textToSend || inputMessage;
+    if (!query.trim() || isLoading) return;
+
+    const userMsg: Message = {
+      id: `msg-${Date.now()}`,
+      sender: 'user',
+      text: query,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    setInputMessage('');
+    setIsLoading(true);
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: query,
+          language: currentLang,
+        }),
+      });
+
+      const data = await res.json();
+      setIsLoading(false);
+
+      const botReply = data.response || data.reply || getLocalBankingResponse(query, currentLang);
+
+      const botMsg: Message = {
+        id: `msg-${Date.now() + 1}`,
+        sender: 'bot',
+        text: botReply,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+
+      setMessages((prev) => [...prev, botMsg]);
+    } catch (err) {
+      console.warn('Chat API fetch issue, using trained local banking engine:', err);
+      setIsLoading(false);
+      const fallbackReply = getLocalBankingResponse(query, currentLang);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `msg-${Date.now() + 1}`,
+          sender: 'bot',
+          text: fallbackReply,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
+    }
+  };
+
+  // Voice Input (Speech Recognition)
+  const handleStartVoiceInput = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert(currentLang === 'hi' ? 'आपका ब्राउज़र वॉयस इनपुट का समर्थन नहीं करता है' : 'Voice recognition is not supported in this browser');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = currentLang === 'hi' ? 'hi-IN' : 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInputMessage(transcript);
+      setIsListening(false);
+      handleSendMessage(transcript);
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
+
+    recognition.start();
+  };
+
+  // Text to Speech
+  const handleReadAloud = (text: string) => {
+    if (!('speechSynthesis' in window)) return;
+
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    const cleanText = text.replace(/[*#]/g, '');
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = currentLang === 'hi' ? 'hi-IN' : 'en-IN';
+    utterance.rate = 1.0;
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const quickPrompts = [
+    'PMEGP 35% subsidy SC/ST ke liye kaise milti hai?',
+    'Bina bank gaye Mudra loan kaise le?',
+    'PM Vishwakarma 5% artisan loan ke liye kya chahiye?',
+    'Study loan Vidya Lakshmi interest subsidy rules?',
+  ];
+
+  return (
+    <>
+      {/* Floating Action Button */}
+      {!isOpen && (
+        <button
+          id="ai-chatbot-floating-btn"
+          onClick={() => setIsOpen(true)}
+          className="fixed bottom-5 right-5 z-40 p-3.5 sm:px-5 sm:py-3.5 rounded-full bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-800 text-white shadow-xl shadow-emerald-700/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 group ring-4 ring-emerald-500/20"
+        >
+          <div className="relative">
+            <Bot className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-100" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+          </div>
+          <div className="text-left hidden sm:block">
+            <p className="text-xs font-bold leading-none">AI Loan Sahayak</p>
+            <p className="text-[10px] text-emerald-200 leading-tight">Instant 24/7 Answers</p>
+          </div>
+        </button>
+      )}
+
+      {/* Chat Window */}
+      {isOpen && (
+        <div
+          id="ai-chatbot-window"
+          className={`fixed bottom-5 right-5 z-50 w-full sm:w-96 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col transition-all duration-200 ${
+            isMinimized ? 'h-16' : 'h-[580px] max-h-[85vh]'
+          }`}
+        >
+          {/* Chat Header */}
+          <div className="p-4 bg-gradient-to-r from-emerald-700 to-teal-800 text-white flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center border border-white/20">
+                <Bot className="w-5 h-5 text-emerald-200" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold flex items-center gap-1.5">
+                  AI Loan Sahayak
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                </h4>
+                <p className="text-[10px] text-emerald-100/90">
+                  Govt. Scheme & Credit Intelligence
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setIsMinimized(!isMinimized)}
+                className="p-1.5 rounded-lg hover:bg-white/10 text-white/80 transition-colors"
+                title={isMinimized ? 'Expand' : 'Minimize'}
+              >
+                {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+              </button>
+              <button
+                id="close-chat-btn"
+                onClick={() => {
+                  setIsOpen(false);
+                  if (isSpeaking) window.speechSynthesis.cancel();
+                }}
+                className="p-1.5 rounded-lg hover:bg-white/10 text-white/80 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {!isMinimized && (
+            <>
+              {/* Message List */}
+              <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50 dark:bg-slate-950/40 text-xs">
+                {messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex items-start gap-2 ${
+                      msg.sender === 'user' ? 'justify-end' : 'justify-start'
+                    }`}
+                  >
+                    {msg.sender === 'bot' && (
+                      <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 text-[10px] mt-0.5">
+                        <Bot className="w-4 h-4" />
+                      </div>
+                    )}
+
+                    <div
+                      className={`max-w-[82%] p-3 rounded-2xl relative space-y-1 ${
+                        msg.sender === 'user'
+                          ? 'bg-emerald-600 text-white rounded-br-xs'
+                          : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-bl-xs border border-slate-200 dark:border-slate-700 shadow-xs'
+                      }`}
+                    >
+                      <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                      <div className="flex items-center justify-between text-[10px] opacity-60 pt-0.5">
+                        <span>{msg.timestamp}</span>
+                        {msg.sender === 'bot' && (
+                          <button
+                            onClick={() => handleReadAloud(msg.text)}
+                            className="p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700"
+                            title="Read Aloud"
+                          >
+                            {isSpeaking ? (
+                              <VolumeX className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+                            ) : (
+                              <Volume2 className="w-3.5 h-3.5 text-slate-500" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {isLoading && (
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    </div>
+                    <div className="p-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-500">
+                      AI Sahayak is formulating banking advisory...
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Quick Prompt Chips */}
+              <div className="p-2 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto flex gap-1.5 scrollbar-none">
+                {quickPrompts.map((prompt, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSendMessage(prompt)}
+                    className="shrink-0 text-[10px] px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/60 dark:hover:text-emerald-300 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+
+              {/* Input Box */}
+              <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <button
+                    type="button"
+                    onClick={handleStartVoiceInput}
+                    className={`p-2.5 rounded-xl border transition-colors shrink-0 ${
+                      isListening
+                        ? 'bg-red-500 text-white border-red-600 animate-pulse'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-emerald-50 hover:text-emerald-600'
+                    }`}
+                    title={isListening ? 'Listening...' : 'Voice Input (बोलकर पूछें)'}
+                  >
+                    {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  </button>
+
+                  <input
+                    id="chat-message-input"
+                    type="text"
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    placeholder={isListening ? 'बोलिए, सुन रहे हैं...' : 'Type or speak loan question...'}
+                    className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  />
+                  <button
+                    id="send-chat-msg-btn"
+                    type="submit"
+                    disabled={!inputMessage.trim() || isLoading}
+                    className="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white transition-all shrink-0"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </form>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </>
+  );
+};

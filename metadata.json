@@ -1,0 +1,6 @@
+{
+  "name": "JanDhan Digital Loan Portal",
+  "description": "Unified digital lending and government schemes portal with Aadhaar e-KYC, biometric verification, instant document validation, AI loan advisor, real-time application tracking, and administrative governance.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
