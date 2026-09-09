@@ -486,55 +486,81 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ currentLang, user, applica
 
               {/* Mode 1: Standard AI Sahayak Chat */}
               {chatMode === 'ai' && (
-                <>
-                  <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50 dark:bg-slate-950/40 text-xs">
+                <div className="relative flex-1 flex flex-col overflow-hidden">
+                  {/* Stylish Chat Window Background Image */}
+                  <img
+                    src="https://images.unsplash.com/photo-1557683316-973673baf926?w=800&auto=format&fit=crop&q=80"
+                    alt="Chatbot Background"
+                    className="absolute inset-0 w-full h-full object-cover opacity-15 dark:opacity-25 pointer-events-none"
+                  />
+                  <div className="absolute inset-0 bg-slate-50/85 dark:bg-slate-950/85 backdrop-blur-xs pointer-events-none" />
+
+                  <div className="relative z-10 flex-1 p-4 overflow-y-auto space-y-3.5 text-xs font-sans">
                     {messages.map((msg) => (
                       <div
                         key={msg.id}
-                        className={`flex items-start gap-2 ${
+                        className={`flex items-start gap-2.5 ${
                           msg.sender === 'user' ? 'justify-end' : 'justify-start'
                         }`}
                       >
                         {msg.sender === 'bot' && (
-                          <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 text-[10px] mt-0.5">
+                          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-800 text-white flex items-center justify-center shrink-0 text-xs mt-0.5 shadow-md border border-emerald-400/30">
                             <Bot className="w-4 h-4" />
                           </div>
                         )}
 
                         <div
-                          className={`max-w-[82%] p-3 rounded-2xl relative space-y-1 ${
+                          className={`max-w-[85%] p-3.5 rounded-2xl relative space-y-1.5 shadow-sm transition-all ${
                             msg.sender === 'user'
-                              ? 'bg-emerald-600 text-white rounded-br-xs'
-                              : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-bl-xs border border-slate-200 dark:border-slate-700 shadow-xs'
+                              ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-br-xs'
+                              : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-bl-xs border border-slate-200 dark:border-slate-800 shadow-md'
                           }`}
                         >
-                          <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-                          <div className="flex items-center justify-between text-[10px] opacity-60 pt-0.5">
-                            <span>{msg.timestamp}</span>
-                            {msg.sender === 'bot' && (
+                          {/* Sender Identity Badge */}
+                          <div className="flex items-center justify-between gap-2 text-[10px] font-extrabold pb-1 border-b border-black/10 dark:border-white/10">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider ${
+                              msg.sender === 'user'
+                                ? 'bg-white/20 text-white'
+                                : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
+                            }`}>
+                              {msg.sender === 'user' ? `👤 Citizen: ${user?.fullName?.split(' ')[0] || 'Online User'}` : '🤖 AI Sahayak (जनधन सहायक)'}
+                            </span>
+                            <span className="opacity-75 font-mono">{msg.timestamp}</span>
+                          </div>
+
+                          <p className="leading-relaxed whitespace-pre-wrap font-sans text-xs tracking-normal">{msg.text}</p>
+                          
+                          {msg.sender === 'bot' && (
+                            <div className="flex justify-end pt-1">
                               <button
                                 onClick={() => handleReadAloud(msg.text)}
-                                className="p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700"
+                                className="p-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-slate-500 hover:text-emerald-600 transition-colors flex items-center gap-1 text-[10px] font-bold"
                                 title="Read Aloud"
                               >
                                 {isSpeaking ? (
-                                  <VolumeX className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+                                  <>
+                                    <VolumeX className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+                                    <span>Stop Voice</span>
+                                  </>
                                 ) : (
-                                  <Volume2 className="w-3.5 h-3.5 text-slate-500" />
+                                  <>
+                                    <Volume2 className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
+                                    <span>Listen</span>
+                                  </>
                                 )}
                               </button>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
 
                     {isLoading && (
                       <div className="flex items-center gap-2 text-slate-400">
-                        <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
                           <RefreshCw className="w-4 h-4 animate-spin" />
                         </div>
-                        <div className="p-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-500">
+                        <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-500 shadow-md">
                           AI Sahayak is formulating banking advisory...
                         </div>
                       </div>
@@ -543,40 +569,49 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ currentLang, user, applica
                   </div>
 
                   {/* Quick Prompt Chips */}
-                  <div className="p-2 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto flex gap-1.5 scrollbar-none">
+                  <div className="relative z-10 p-2 border-t border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xs overflow-x-auto flex gap-1.5 scrollbar-none">
                     {quickPrompts.map((prompt, idx) => (
                       <button
                         key={idx}
                         onClick={() => handleSendMessage(prompt)}
-                        className="shrink-0 text-[10px] px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/60 dark:hover:text-emerald-300 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap"
+                        className="shrink-0 text-[10px] px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/60 dark:hover:text-emerald-300 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap font-medium"
                       >
                         {prompt}
                       </button>
                     ))}
                   </div>
-                </>
+                </div>
               )}
 
               {/* Mode 2: Direct Admin Helpdesk Two-Way Communication */}
               {chatMode === 'helpdesk' && (
-                <div className="flex-1 flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
+                <div className="relative flex-1 flex flex-col overflow-hidden">
+                  {/* Stylish Chat Window Background Image */}
+                  <img
+                    src="https://images.unsplash.com/photo-1557683316-973673baf926?w=800&auto=format&fit=crop&q=80"
+                    alt="Helpdesk Background"
+                    className="absolute inset-0 w-full h-full object-cover opacity-15 dark:opacity-25 pointer-events-none"
+                  />
+                  <div className="absolute inset-0 bg-slate-50/85 dark:bg-slate-950/85 backdrop-blur-xs pointer-events-none" />
+
                   {/* Citizen Info Strip */}
-                  <div className="px-3 py-2 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-900 text-[11px] flex items-center justify-between shrink-0">
+                  <div className="relative z-10 px-3.5 py-2.5 bg-amber-500/10 dark:bg-amber-950/50 border-b border-amber-300/30 dark:border-amber-900/50 text-xs flex items-center justify-between shrink-0 backdrop-blur-xs">
                     <div className="truncate">
-                      <span className="font-bold text-amber-900 dark:text-amber-300 block">
+                      <span className="font-extrabold text-amber-900 dark:text-amber-300 block text-xs">
                         Citizen Ticket: {helpdeskTicket?.ticketId || 'TICK-NEW'}
                       </span>
-                      <span className="text-slate-500 text-[10px] font-mono">
+                      <span className="text-slate-600 dark:text-slate-400 text-[10px] font-mono">
                         Aadhaar: XXXX-XXXX-{(helpdeskTicket?.citizenAadhaar || user?.aadhaarNumber || '1098').slice(-4)} • App: {helpdeskTicket?.applicationId || 'APP-2026-89421'}
                       </span>
                     </div>
-                    <span className="shrink-0 px-2 py-0.5 rounded bg-emerald-600 text-white font-bold text-[10px]">
+                    <span className="shrink-0 px-2.5 py-1 rounded-full bg-emerald-600 text-white font-extrabold text-[10px] shadow-xs flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
                       Live Admin Link
                     </span>
                   </div>
 
                   {/* Helpdesk Message History */}
-                  <div className="flex-1 p-3 overflow-y-auto space-y-3 text-xs">
+                  <div className="relative z-10 flex-1 p-3.5 overflow-y-auto space-y-3.5 text-xs font-sans">
                     {helpdeskTicket?.messages.map((m) => (
                       <div
                         key={m.id}
@@ -585,17 +620,21 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ currentLang, user, applica
                         }`}
                       >
                         <div
-                          className={`max-w-[85%] p-3 rounded-2xl space-y-1 ${
+                          className={`max-w-[88%] p-3.5 rounded-2xl space-y-1.5 shadow-md ${
                             m.sender === 'user'
-                              ? 'bg-amber-600 text-white rounded-br-xs'
-                              : 'bg-emerald-950 text-emerald-100 rounded-bl-xs border border-emerald-800 shadow-md'
+                              ? 'bg-gradient-to-r from-amber-600 to-orange-700 text-white rounded-br-xs'
+                              : 'bg-gradient-to-r from-slate-900 to-emerald-950 text-emerald-100 rounded-bl-xs border border-emerald-700/60'
                           }`}
                         >
-                          <div className="flex items-center justify-between gap-2 text-[10px] font-bold pb-1 border-b border-white/10">
-                            <span>{m.sender === 'user' ? user?.fullName || 'Citizen Applicant' : '👨‍💼 Bank Nodal Officer (Admin)'}</span>
-                            <span className="opacity-70 font-mono">{m.timestamp}</span>
+                          <div className="flex items-center justify-between gap-3 text-[10px] font-extrabold pb-1 border-b border-white/20">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider ${
+                              m.sender === 'user' ? 'bg-white/20 text-white' : 'bg-emerald-500/30 text-emerald-200 border border-emerald-400/30'
+                            }`}>
+                              {m.sender === 'user' ? `👤 Citizen: ${user?.fullName || m.citizenName || 'Applicant'}` : '🏛️ Bank Nodal Officer (Admin)'}
+                            </span>
+                            <span className="opacity-75 font-mono text-[10px]">{m.timestamp}</span>
                           </div>
-                          <p className="leading-relaxed whitespace-pre-wrap pt-0.5">{m.text}</p>
+                          <p className="leading-relaxed whitespace-pre-wrap pt-0.5 text-xs font-sans">{m.text}</p>
                         </div>
                       </div>
                     ))}

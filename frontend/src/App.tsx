@@ -635,15 +635,35 @@ export default function App() {
         onOpenNotifications={() => setIsNotificationsOpen(true)}
         activeTab={activeTab}
         onSelectTab={(tab) => {
-          setActiveTab(tab);
-          if (tab === 'admin') setIsAdmin(true);
-          else setIsAdmin(false);
+          if (tab === 'admin') {
+            const hasAdminAuth = sessionStorage.getItem('jandhan_admin_auth') === 'true';
+            if (!hasAdminAuth) {
+              setAuthModalMode('admin');
+              setIsAuthModalOpen(true);
+              return;
+            }
+            setIsAdmin(true);
+            setActiveTab('admin');
+          } else {
+            setActiveTab(tab);
+            setIsAdmin(false);
+          }
         }}
         isAdmin={isAdmin}
         onToggleAdmin={() => {
-          const next = !isAdmin;
-          setIsAdmin(next);
-          setActiveTab(next ? 'admin' : 'schemes');
+          if (!isAdmin) {
+            const hasAdminAuth = sessionStorage.getItem('jandhan_admin_auth') === 'true';
+            if (!hasAdminAuth) {
+              setAuthModalMode('admin');
+              setIsAuthModalOpen(true);
+              return;
+            }
+            setIsAdmin(true);
+            setActiveTab('admin');
+          } else {
+            setIsAdmin(false);
+            setActiveTab('schemes');
+          }
         }}
       />
 
@@ -678,11 +698,16 @@ export default function App() {
         ) : activeTab === 'applications' ? (
           <ApplicationTracker
             applications={applications}
+            user={user}
             onOpenPayment={(app) => {
               setAppForPayment(app);
               setIsPaymentModalOpen(true);
             }}
             onRefresh={fetchBackendData}
+            onSelectTab={(t) => {
+              setActiveTab(t);
+              setIsAdmin(t === 'admin');
+            }}
           />
         ) : activeTab === 'eligibility' ? (
           <DocumentEligibilityChecker

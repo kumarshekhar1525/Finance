@@ -24,25 +24,54 @@ import { LoanApplication, ApplicationStatus } from '../types';
 
 interface TrackerProps {
   applications: LoanApplication[];
+  user?: UserProfile | null;
   onOpenPayment: (app: LoanApplication) => void;
   onRefresh: () => void;
+  onSelectTab?: (tab: 'schemes' | 'applications' | 'calculator' | 'eligibility' | 'admin') => void;
 }
 
 export const ApplicationTracker: React.FC<TrackerProps> = ({
   applications,
+  user,
   onOpenPayment,
   onRefresh,
+  onSelectTab,
 }) => {
   const [searchId, setSearchId] = useState('');
+
+  // User Data Privacy: Filter applications so logged-in users only see their own applications
+  const userApplications = applications.filter((app) => {
+    if (!user) return true; // Show default list if no profile active
+    const cleanUserAadhaar = user.aadhaarNumber?.replace(/\D/g, '') || '';
+    const cleanAppAadhaar = app.applicantAadhaar?.replace(/\D/g, '') || '';
+    const userEmail = user.email?.toLowerCase().trim();
+    const appEmail = app.applicantEmail?.toLowerCase().trim();
+    const userPhone = user.phone?.replace(/\D/g, '') || '';
+    const appPhone = app.applicantPhone?.replace(/\D/g, '') || '';
+    const userName = user.fullName?.toLowerCase().trim();
+    const appName = app.applicantName?.toLowerCase().trim();
+
+    return (
+      (cleanUserAadhaar && cleanAppAadhaar && cleanUserAadhaar === cleanAppAadhaar) ||
+      (userEmail && appEmail && userEmail === appEmail) ||
+      (userPhone && appPhone && userPhone === appPhone) ||
+      (userName && appName && userName === appName)
+    );
+  });
+
+  // Fallback if user filter returns 0 applications but applications exist
+  const displayApps = userApplications.length > 0 ? userApplications : (searchId ? applications : []);
+
   const [selectedAppId, setSelectedAppId] = useState<string>(
-    applications[0]?.trackingId || applications[0]?.id || ''
+    displayApps[0]?.trackingId || displayApps[0]?.id || ''
   );
   const [showSanctionLetter, setShowSanctionLetter] = useState(false);
   const [activeDetailTab, setActiveDetailTab] = useState<'timeline' | 'dispatch_logs' | 'docs'>('timeline');
 
-  const selectedApp = applications.find(
+  // Keep selected app synced with displayApps if selectedAppId changes or on initial render
+  const selectedApp = displayApps.find(
     (a) => a.trackingId === selectedAppId || a.id === selectedAppId
-  );
+  ) || displayApps[0];
 
   const STAGES: { key: ApplicationStatus; label: string; desc: string }[] = [
     { key: 'submitted', label: 'Submitted', desc: 'Application received online' },
@@ -152,9 +181,9 @@ export const ApplicationTracker: React.FC<TrackerProps> = ({
       <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-8">
 
       {/* Applications Selector Horizontal Bar */}
-      {applications.length > 0 && (
+      {displayApps.length > 0 ? (
         <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none">
-          {applications.map((app) => (
+          {displayApps.map((app) => (
             <button
               key={app.id}
               onClick={() => setSelectedAppId(app.trackingId)}
@@ -188,6 +217,28 @@ export const ApplicationTracker: React.FC<TrackerProps> = ({
               </p>
             </button>
           ))}
+        </div>
+      ) : (
+        <div className="p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
+            <ShieldCheck className="w-8 h-8" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+              गोपनीयता सुरक्षा (Personal Data Privacy Enabled)
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-1">
+              आपकी आईडी ({user?.fullName || 'Active User'}) के नाम पर अभी कोई लोन अर्जी दर्ज नहीं है। अन्य नागरिकों का डेटा सुरक्षा के कारण केवल उनकी अपनी प्रोफाइल पर ही दिखाई देता है।
+            </p>
+          </div>
+          {onSelectTab && (
+            <button
+              onClick={() => onSelectTab('schemes')}
+              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all"
+            >
+              योजनाएं देखें और नया आवेदन करें (Explore Schemes & Apply)
+            </button>
+          )}
         </div>
       )}
 

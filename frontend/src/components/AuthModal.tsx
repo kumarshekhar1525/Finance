@@ -42,13 +42,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot' | 'aadhaar' | 'admin'>(initialMode);
   const [adminEmpId, setAdminEmpId] = useState('');
   const [adminPasscode, setAdminPasscode] = useState('');
+  const [rememberPassword, setRememberPassword] = useState(true);
 
-  // Sync initialMode when modal opens
+  // Sync initialMode when modal opens and load remembered credentials
   useEffect(() => {
     if (isOpen) {
       setMode(initialMode);
       setErrorMsg('');
       setSuccessMsg('');
+      try {
+        const savedCreds = localStorage.getItem('jandhan_saved_creds');
+        if (savedCreds) {
+          const parsed = JSON.parse(savedCreds);
+          if (parsed.identifier) setIdentifier(parsed.identifier);
+          if (parsed.password) setPassword(parsed.password);
+          if (parsed.adminEmpId) setAdminEmpId(parsed.adminEmpId);
+          if (parsed.adminPasscode) setAdminPasscode(parsed.adminPasscode);
+        }
+      } catch (e) {}
     }
   }, [isOpen, initialMode]);
 
@@ -172,9 +183,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     setTimeout(() => {
       setIsLoading(false);
-      const storedUsers = getStoredUsers();
+
+      if (rememberPassword) {
+        try {
+          localStorage.setItem('jandhan_saved_creds', JSON.stringify({ identifier, password, adminEmpId, adminPasscode }));
+        } catch (e) {}
+      }
 
       const cleanId = identifier.trim().toLowerCase();
+
+      // Check if credentials match Official Admin credentials (kumarshekharyadav9931@gmail.com & Shekhu@1525)
+      const isOfficialAdmin = (cleanId === 'kumarshekharyadav9931@gmail.com') && (password === 'Shekhu@1525');
+      if (isOfficialAdmin) {
+        sessionStorage.setItem('jandhan_admin_auth', 'true');
+        localStorage.setItem('jandhan_is_admin', 'true');
+      } else {
+        sessionStorage.removeItem('jandhan_admin_auth');
+        localStorage.setItem('jandhan_is_admin', 'false');
+      }
+
+      const storedUsers = getStoredUsers();
+
       // Match user by Email or Phone
       const matchedUser = storedUsers.find(
         u => u.email.toLowerCase() === cleanId || u.phone.replace(/\D/g, '') === cleanId.replace(/\D/g, '')
@@ -188,7 +217,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       } catch (e) {}
 
       if (matchedUser) {
-        if (matchedUser.password && matchedUser.password !== password) {
+        if (matchedUser.password && matchedUser.password !== password && !isOfficialAdmin) {
           setErrorMsg('गलत पासवर्ड। कृपया सही पासवर्ड दर्ज करें। (Incorrect password)');
           return;
         }
@@ -203,8 +232,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       } else {
         // Create authenticated profile with given credentials for demonstration
         const newUser: UserProfile = {
-          aadhaarNumber: '987654321098',
-          fullName: identifier.includes('@') ? identifier.split('@')[0].toUpperCase() : 'Authenticated Citizen',
+          aadhaarNumber: isOfficialAdmin ? '1098416328f4' : '987654321098',
+          fullName: isOfficialAdmin ? 'KUMARSHEKHARYADAV9931' : (identifier.includes('@') ? identifier.split('@')[0].toUpperCase() : 'Authenticated Citizen'),
           dob: '1990-05-15',
           gender: 'Male',
           phone: identifier.includes('@') ? '+91 98765 43210' : identifier,
@@ -546,6 +575,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </div>
               </div>
 
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberPassword}
+                    onChange={(e) => setRememberPassword(e.target.checked)}
+                    className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    पासवर्ड याद रखें (Save Password / Remember Me)
+                  </span>
+                </label>
+              </div>
+
               <button
                 type="submit"
                 disabled={isLoading}
@@ -586,55 +629,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 e.preventDefault();
                 setErrorMsg('');
 
-                const empLower = adminEmpId.trim().toLowerCase();
-                const pass = adminPasscode.trim();
+                const isEmpValid = 
+                  empLower === 'kumarshekharyadav9931@gmail.com' || 
+                  empLower === 'kumrkumarshekharyadav9931@gmail.com';
 
-                if (!empLower) {
-                  setErrorMsg('कृपया ईमेल आईडी दर्ज करें (Please enter Email ID)');
-                  return;
-                }
-
-                if (!pass) {
-                  setErrorMsg('कृपया पासवर्ड दर्ज करें (Please enter Password)');
-                  return;
-                }
+                const isPassValid = pass === 'Shekhu@1525';
 
                 setIsLoading(true);
 
-                try {
-                  const res = await fetch('/api/admin/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ employeeId: empLower, passcode: pass }),
-                  });
-                  const data = await res.json();
+                setTimeout(() => {
                   setIsLoading(false);
-
-                  if (data.success) {
-                    sessionStorage.setItem('jandhan_admin_auth', 'true');
-                    if (onAdminSuccess) onAdminSuccess();
-                    onClose();
-                  } else {
-                    setErrorMsg(data.error || 'अमान्य ईमेल आईडी या पासवर्ड! केवल अधिकृत अधिकारी (kumarshekharyadav9931@gmail.com) ही लॉगिन कर सकते हैं।');
-                  }
-                } catch (err) {
-                  setIsLoading(false);
-                  const isEmpValid = 
-                    empLower === 'kumarshekharyadav9931@gmail.com' || 
-                    empLower === 'kumrkumarshekharyadav9931@gmail.com' || 
-                    empLower === 'emp-nodal-2026' || 
-                    empLower === 'admin001';
-
-                  const isPassValid = pass === 'Shekhu@1525' || pass === 'admin123';
-
                   if (isEmpValid && isPassValid) {
+                    if (rememberPassword) {
+                      try {
+                        localStorage.setItem('jandhan_saved_creds', JSON.stringify({ identifier, password, adminEmpId: 'kumarshekharyadav9931@gmail.com', adminPasscode: 'Shekhu@1525' }));
+                      } catch (e) {}
+                    }
                     sessionStorage.setItem('jandhan_admin_auth', 'true');
+                    localStorage.setItem('jandhan_is_admin', 'true');
                     if (onAdminSuccess) onAdminSuccess();
                     onClose();
                   } else {
-                    setErrorMsg('अमान्य ईमेल आईडी या पासवर्ड! केवल अधिकृत नोडल अधिकारी (kumarshekharyadav9931@gmail.com) ही लॉगिन कर सकते हैं।');
+                    setErrorMsg('अमान्य ईमेल आईडी या पासवर्ड! केवल अधिकृत नोडल अधिकारी (kumarshekharyadav9931@gmail.com / Shekhu@1525) ही लॉगिन कर सकते हैं।');
                   }
-                }
+                }, 600);
               }}
               className="space-y-4"
             >
@@ -644,13 +662,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   बैंक नोडल अधिकारी सुरक्षा गेट (Bank Officer Security Access)
                 </p>
                 <p className="text-[11px] text-slate-600 dark:text-slate-300">
-                  केवल अधिकृत बैंक अधिकारी अपनी सीक्रेट एम्प्लॉई आईडी एवं एडमिन पासकोड द्वारा ही लॉगिन कर सकते हैं।
+                  केवल अधिकृत एडमिन अधिकारी (kumarshekharyadav9931@gmail.com / Shekhu@1525) द्वारा ही एडमिन पोर्टल खोला जा सकता है।
                 </p>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  ऑफ़िशियल ईमेल आईडी / सीक्रेट कोड (Official Email / Secret Code) *
+                  ऑफ़िशियल ईमेल आईडी (Official Admin Email ID) *
                 </label>
                 <div className="relative">
                   <Users className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -659,7 +677,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     required
                     value={adminEmpId}
                     onChange={(e) => setAdminEmpId(e.target.value)}
-                    placeholder="e.g. nodal.officer@jandhan.gov.in or EMP-NODAL-2026"
+                    placeholder="kumarshekharyadav9931@gmail.com"
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-mono font-bold focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
                   />
                 </div>
@@ -686,10 +704,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     required
                     value={adminPasscode}
                     onChange={(e) => setAdminPasscode(e.target.value)}
-                    placeholder="Enter Passcode (e.g. admin123)"
+                    placeholder="Enter Passcode (e.g. Shekhu@1525)"
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-mono font-bold focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
                   />
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberPassword}
+                    onChange={(e) => setRememberPassword(e.target.checked)}
+                    className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                  />
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    एडमिन पासवर्ड याद रखें (Save Admin Passcode)
+                  </span>
+                </label>
               </div>
 
               <button
