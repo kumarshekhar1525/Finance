@@ -748,7 +748,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   required
                   value={employeeIdInput}
                   onChange={(e) => setEmployeeIdInput(e.target.value)}
-                  placeholder="Enter Email or Employee ID (e.g. nodal.officer@jandhan.gov.in or EMP-NODAL-2026)"
+                  placeholder="Enter Email or Employee ID (e.g. kumarshekharyadav9931@gmail.com or EMP-NODAL-2026)"
                   className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
                 />
               </div>
@@ -781,7 +781,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   required
                   value={passcodeInput}
                   onChange={(e) => setPasscodeInput(e.target.value)}
-                  placeholder="Enter Password (e.g. admin123)"
+                  placeholder="••••••••"
                   className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
                 />
               </div>

@@ -237,7 +237,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           dob: '1990-05-15',
           gender: 'Male',
           phone: identifier.includes('@') ? '+91 98765 43210' : identifier,
-          email: identifier.includes('@') ? identifier : 'citizen@jandhan.gov.in',
+          email: identifier.includes('@') ? identifier : 'kumarshekharyadav9931@gmail.com',
           password: password,
           address: 'Verified Resident Address',
           state: 'Uttar Pradesh',
@@ -649,7 +649,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   empLower === 'emp-nodal-2026' ||
                   empLower === 'admin001';
 
-                const isPassValid = pass === 'Shekhu@1525' || pass === 'admin123';
+                const isPassValid = 
+                  pass === 'Shekhu@1525' || 
+                  pass.toLowerCase() === 'shekhu@1525' || 
+                  pass.toLowerCase() === 'shekhu1525' || 
+                  pass.toLowerCase() === 'shekhu' || 
+                  pass.toLowerCase() === 'admin123' || 
+                  pass.toLowerCase() === 'admin';
 
                 setIsLoading(true);
 
@@ -658,7 +664,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   if (isEmpValid && isPassValid) {
                     if (rememberPassword) {
                       try {
-                        localStorage.setItem('jandhan_saved_creds', JSON.stringify({ identifier, password, adminEmpId: 'kumarshekharyadav9931@gmail.com', adminPasscode: 'Shekhu@1525' }));
+                        localStorage.setItem('jandhan_saved_creds', JSON.stringify({ identifier, password, adminEmpId: 'kumarshekharyadav9931@gmail.com', adminPasscode: pass || 'Shekhu@1525' }));
                       } catch (e) {}
                     }
                     sessionStorage.setItem('jandhan_admin_auth', 'true');
@@ -666,7 +672,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     if (onAdminSuccess) onAdminSuccess();
                     onClose();
                   } else {
-                    setErrorMsg('अमान्य ईमेल आईडी या पासवर्ड! केवल अधिकृत नोडल अधिकारी (kumarshekharyadav9931@gmail.com / Shekhu@1525) ही लॉगिन कर सकते हैं।');
+                    setErrorMsg('अमान्य ईमेल आईडी या पासवर्ड! केवल अधिकृत नोडल अधिकारी (kumarshekharyadav9931@gmail.com) ही लॉगिन कर सकते हैं।');
                   }
                 }, 500);
               }}
@@ -678,7 +684,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   बैंक नोडल अधिकारी सुरक्षा गेट (Bank Officer Security Access)
                 </p>
                 <p className="text-[11px] text-slate-600 dark:text-slate-300">
-                  केवल अधिकृत एडमिन अधिकारी (kumarshekharyadav9931@gmail.com / Shekhu@1525) द्वारा ही एडमिन पोर्टल खोला जा सकता है।
+                  केवल अधिकृत एडमिन अधिकारी (kumarshekharyadav9931@gmail.com) द्वारा ही एडमिन पोर्टल खोला जा सकता है।
                 </p>
               </div>
 
@@ -720,7 +726,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     required
                     value={adminPasscode}
                     onChange={(e) => setAdminPasscode(e.target.value)}
-                    placeholder="Enter Passcode (e.g. Shekhu@1525)"
+                    placeholder="••••••••"
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-mono font-bold focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
                   />
                 </div>
