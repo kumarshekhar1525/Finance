@@ -60,7 +60,14 @@ export default function App() {
 
   // State: Navigation Tabs & Admin Toggle
   const [activeTab, setActiveTab] = useState<'schemes' | 'applications' | 'calculator' | 'eligibility' | 'admin'>('schemes');
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
+    return localStorage.getItem('jandhan_is_admin') === 'true' || sessionStorage.getItem('jandhan_admin_auth') === 'true';
+  });
+
+  // Keep admin status synced in localStorage
+  useEffect(() => {
+    localStorage.setItem('jandhan_is_admin', isAdmin ? 'true' : 'false');
+  }, [isAdmin]);
 
   // State: User Profile (Aadhaar based)
   const [user, setUser] = useState<UserProfile | null>(() => {

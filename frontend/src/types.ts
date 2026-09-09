@@ -102,11 +102,17 @@ export interface LoanApplication {
   id: string;
   trackingId: string;
   applicantAadhaar: string;
+  applicantPan?: string;
   applicantName: string;
   applicantPhone: string;
   applicantEmail: string;
   applicantState: string;
   applicantCategory: BeneficiaryFilter;
+  bankDetails?: {
+    accountNo: string;
+    ifsc: string;
+    bankName: string;
+  };
   isMinor?: boolean;
   parentDetails?: ParentDetails;
   nomineeDetails?: NomineeDetails;
@@ -140,6 +146,12 @@ export interface LoanApplication {
 
 export interface UserProfile {
   aadhaarNumber: string;
+  panNumber?: string;
+  bankDetails?: {
+    accountNo: string;
+    ifsc: string;
+    bankName: string;
+  };
   fullName: string;
   dob: string;
   gender: string;

@@ -1287,24 +1287,67 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
+              {/* KYC Identity & Bank Verification Summary */}
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 space-y-2 text-xs">
+                <h4 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  Verified KYC & Bank Account Details
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 font-mono">
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-sans">Aadhaar Number</span>
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      {selectedApp.applicantAadhaar || 'XXXX-XXXX-1098'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-sans">PAN Card Number</span>
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      {selectedApp.applicantPan || 'ABCDE1234F'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-sans">Bank Account</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      {selectedApp.bankDetails?.accountNo || '987654321098'} ({selectedApp.bankDetails?.ifsc || 'SBIN0001234'})
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Documents List */}
-              <div className="space-y-2">
-                <h4 className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+              <div className="space-y-3">
+                <h4 className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-xs">
                   Uploaded Verification Documents ({selectedApp.documents.length})
                 </h4>
                 <div className="space-y-2">
                   {selectedApp.documents.map((doc) => (
                     <div
                       key={doc.id}
-                      className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between"
+                      className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-900"
                     >
-                      <div>
-                        <p className="font-bold text-slate-800 dark:text-slate-200">{doc.name}</p>
-                        <p className="text-[10px] text-slate-400 font-mono">{doc.fileName} • {doc.fileSize}</p>
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-800 dark:text-slate-200 text-xs">{doc.name}</p>
+                          <p className="text-[10px] text-slate-400 font-mono">{doc.fileName} • {doc.fileSize}</p>
+                        </div>
                       </div>
-                      <span className="font-bold text-[10px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                        {doc.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-[10px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                          {doc.status}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => alert(`📄 Document Inspection Viewer:\n\nDocument Name: ${doc.name}\nFile: ${doc.fileName}\nStatus: Verified e-KYC Proof\nApplicant Aadhaar: ${selectedApp.applicantAadhaar}\nApplicant Name: ${selectedApp.applicantName}`)}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 font-bold text-[11px] flex items-center gap-1 border border-emerald-200 dark:border-emerald-800"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>View Doc</span>
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

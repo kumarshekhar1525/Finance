@@ -58,6 +58,12 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
   const [applicantState, setApplicantState] = useState<string>(user?.state || 'Uttar Pradesh');
   const [applicantCategory, setApplicantCategory] = useState<BeneficiaryFilter>(user?.category || 'general');
 
+  // PAN Card & Bank Account State
+  const [applicantPan, setApplicantPan] = useState<string>(user?.panNumber || 'ABCDE1234F');
+  const [bankAccountNo, setBankAccountNo] = useState<string>(user?.bankDetails?.accountNo || '987654321098');
+  const [bankIfsc, setBankIfsc] = useState<string>(user?.bankDetails?.ifsc || 'SBIN0001234');
+  const [bankName, setBankName] = useState<string>(user?.bankDetails?.bankName || 'State Bank of India');
+
   // Minor (<18) & Parent Details State
   const [isMinor, setIsMinor] = useState<boolean>(false);
   const [fatherName, setFatherName] = useState<string>(user?.parentDetails?.fatherName || '');
@@ -228,6 +234,62 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
 
   const removeDoc = (docId: string) => {
     setDocuments((prev) => prev.filter((d) => d.id !== docId));
+  };
+
+  const validateStep2Inputs = (): boolean => {
+    setFormError('');
+
+    if (!applicantName.trim() || applicantName.trim().length < 3) {
+      setFormError('❌ कृपया आधार और पैन के अनुसार अपना पूरा नाम दर्ज करें (Please enter full legal name as per Aadhaar/PAN)');
+      return false;
+    }
+
+    if (!applicantAadhaar || applicantAadhaar.length !== 12 || !/^\d{12}$/.test(applicantAadhaar)) {
+      setFormError('❌ अमान्य आधार नंबर! आधार नंबर ठीक 12 अंकों का होना अनिवार्य है। (Please enter valid 12-digit Aadhaar number)');
+      return false;
+    }
+
+    if (!applicantPan || !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(applicantPan.toUpperCase())) {
+      setFormError('❌ अमान्य पैन कार्ड नंबर! पैन कार्ड नंबर 10 अक्षरों का होना अनिवार्य है (उदा. ABCDE1234F)। (Invalid 10-char PAN Number)');
+      return false;
+    }
+
+    if (!bankAccountNo || bankAccountNo.length < 9 || !/^\d{9,18}$/.test(bankAccountNo)) {
+      setFormError('❌ अमान्य बैंक खाता संख्या! बैंक खाता संख्या 9 से 18 अंकों की होनी अनिवार्य है। (Invalid Bank Account Number)');
+      return false;
+    }
+
+    if (!bankIfsc || !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(bankIfsc.toUpperCase())) {
+      setFormError('❌ अमान्य बैंक IFSC कोड! IFSC कोड 11 अक्षरों का होना अनिवार्य है (उदा. SBIN0001234)। (Invalid Bank IFSC Code)');
+      return false;
+    }
+
+    // Check name match against saved Aadhaar profile if present
+    try {
+      const savedStr = localStorage.getItem('jandhan_user_profile');
+      if (savedStr) {
+        const saved = JSON.parse(savedStr);
+        if (saved.fullName) {
+          const nameInputWords = applicantName.trim().toLowerCase().split(/\s+/);
+          const savedWords = saved.fullName.trim().toLowerCase().split(/\s+/);
+          const matchFound = nameInputWords.some((w: string) => savedWords.includes(w));
+          if (!matchFound && nameInputWords.length > 0 && savedWords.length > 0) {
+            setFormError(`❌ नाम और आधार/पैन कार्ड का रिकॉर्ड मेल नहीं खा रहा है! (Name mismatch with Aadhaar/PAN record: "${applicantName}" vs "${saved.fullName}")`);
+            return false;
+          }
+        }
+      }
+    } catch (e) {}
+
+    return true;
+  };
+
+  const handleNextStep = () => {
+    setFormError('');
+    if (currentStep === 2) {
+      if (!validateStep2Inputs()) return;
+    }
+    setCurrentStep((s) => s + 1);
   };
 
   const handleSubmitApplication = async () => {
@@ -627,6 +689,61 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
                   <option value="women">Women Entrepreneur (Special Concession)</option>
                   <option value="senior_citizen">Senior Citizen Pensioner</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  PAN Card Number (10 Chars) *
+                </label>
+                <input
+                  type="text"
+                  maxLength={10}
+                  value={applicantPan}
+                  onChange={(e) => setApplicantPan(e.target.value.toUpperCase())}
+                  placeholder="e.g. ABCDE1234F"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs font-bold uppercase focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  Bank Account Number (खाता संख्या) *
+                </label>
+                <input
+                  type="text"
+                  maxLength={18}
+                  value={bankAccountNo}
+                  onChange={(e) => setBankAccountNo(e.target.value.replace(/\D/g, ''))}
+                  placeholder="9-18 digit Bank Account Number"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  Bank IFSC Code (आईएफएससी कोड) *
+                </label>
+                <input
+                  type="text"
+                  maxLength={11}
+                  value={bankIfsc}
+                  onChange={(e) => setBankIfsc(e.target.value.toUpperCase())}
+                  placeholder="e.g. SBIN0001234"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs font-bold uppercase focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  Bank Name (बैंक का नाम)
+                </label>
+                <input
+                  type="text"
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  placeholder="e.g. State Bank of India"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
               </div>
             </div>
 
@@ -1097,7 +1214,7 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
             <button
               id="wizard-next-btn"
               type="button"
-              onClick={() => setCurrentStep((s) => s + 1)}
+              onClick={handleNextStep}
               className="py-2.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition-all"
             >
               Next Step
