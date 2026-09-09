@@ -414,7 +414,7 @@ export default function App() {
   }, []);
 
   // Search log dispatcher (communicates with backend to log and check moderation)
-  const handleSearchLog = async (query: string, resultsCount: number) => {
+  const handleSearchLog = async (query: string, resultsCount: number, matchedSchemes?: string[]) => {
     if (query.trim()) {
       try {
         const newSearchLog = {
@@ -424,6 +424,7 @@ export default function App() {
           resultsCount,
           isBlocked: false,
           userIp: '106.210.45.12 (User Active Session)',
+          matchedSchemes: matchedSchemes || [],
         };
         const existingStr = localStorage.getItem('jandhan_search_logs');
         const existing = existingStr ? JSON.parse(existingStr) : [];
@@ -435,7 +436,7 @@ export default function App() {
       const res = await fetch('/api/searches', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, resultsCount }),
+        body: JSON.stringify({ query, resultsCount, matchedSchemes }),
       });
       const data = await res.json();
       return data;
@@ -715,7 +716,7 @@ export default function App() {
       </main>
 
       {/* AI Chatbot Floating Assistant */}
-      <AIChatbot currentLang={currentLang} />
+      <AIChatbot currentLang={currentLang} user={user} applications={applications} />
 
       {/* Comprehensive Login / Signup / Forgot Password via OTP Modal */}
       <AuthModal

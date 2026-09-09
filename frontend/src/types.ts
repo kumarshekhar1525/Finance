@@ -181,9 +181,32 @@ export interface SearchQueryLog {
   resultsCount: number;
   isBlocked: boolean;
   flagReason?: string;
+  matchedSchemes?: string[];
 }
 
 export type SearchLog = SearchQueryLog;
+
+export interface HelpdeskChatMessage {
+  id: string;
+  sender: 'user' | 'admin';
+  text: string;
+  timestamp: string;
+  citizenName: string;
+  citizenAadhaar?: string;
+  applicationId?: string;
+}
+
+export interface HelpdeskChatTicket {
+  ticketId: string;
+  citizenName: string;
+  citizenPhone: string;
+  citizenAadhaar: string;
+  applicationId?: string;
+  lastMessage: string;
+  lastUpdated: string;
+  status: 'open' | 'resolved' | 'replied';
+  messages: HelpdeskChatMessage[];
+}
 
 export interface PushNotification {
   id: string;

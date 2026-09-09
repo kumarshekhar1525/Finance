@@ -31,9 +31,11 @@ import {
   KeyRound,
   MessageSquare,
   UserCheck,
-  Bot
+  Bot,
+  Headphones,
+  FileText
 } from 'lucide-react';
-import { LoanApplication, SearchLog, ApplicationStatus, Scheme } from '../types';
+import { LoanApplication, SearchLog, ApplicationStatus, Scheme, HelpdeskChatTicket, HelpdeskChatMessage } from '../types';
 
 interface AdminDashboardProps {
   applications: LoanApplication[];
@@ -211,9 +213,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [passcodeInput, setPasscodeInput] = useState('');
   const [passcodeError, setPasscodeError] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'applications' | 'searches' | 'chat_logs' | 'citizens' | 'schemes'>('applications');
+  const [activeTab, setActiveTab] = useState<'applications' | 'searches' | 'helpdesk' | 'chat_logs' | 'citizens' | 'schemes'>('applications');
   const [searchLogs, setSearchLogs] = useState<SearchLog[]>([]);
   const [chatLogs, setChatLogs] = useState<ChatLogItem[]>([]);
+  const [helpdeskTickets, setHelpdeskTickets] = useState<HelpdeskChatTicket[]>([]);
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [adminReplyText, setAdminReplyText] = useState<string>('');
+  const [inspectDocModal, setInspectDocModal] = useState<{ isOpen: boolean; doc: any; app: LoanApplication | null }>({ isOpen: false, doc: null, app: null });
   const [moderationEnabled, setModerationEnabled] = useState<boolean>(true);
   const [isLoadingSearches, setIsLoadingSearches] = useState(false);
   const [selectedApp, setSelectedApp] = useState<LoanApplication | null>(null);
@@ -343,30 +349,43 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           resultsCount: 4,
           isBlocked: false,
           userIp: '106.210.45.12 (Bareilly, UP)',
+          matchedSchemes: ['Prime Minister Employment Generation Programme (PMEGP)', 'PM Vishwakarma Artisan Credit', 'Pradhan Mantri MUDRA Yojana', 'Stand-Up India Scheme'],
         },
         {
           id: 'search-demo-2',
+          query: 'Kirana & Shops micro loan',
+          timestamp: new Date(Date.now() - 900000).toISOString(),
+          resultsCount: 5,
+          isBlocked: false,
+          userIp: '106.210.45.12 (Bareilly, UP)',
+          matchedSchemes: ['PM Street Vendor\'s AtmaNirbhar Nidhi (PM SVANidhi)', 'Pradhan Mantri MUDRA Yojana', 'PMEGP', 'Credit Guarantee Scheme', 'Kisan Credit Card'],
+        },
+        {
+          id: 'search-demo-3',
           query: 'PM Mudra Shishu loan 50000 tanpa collateral',
           timestamp: new Date(Date.now() - 1800000).toISOString(),
           resultsCount: 6,
           isBlocked: false,
           userIp: '157.33.112.98 (Varanasi, UP)',
+          matchedSchemes: ['PM SVANidhi', 'PM MUDRA Yojana', 'PMEGP', 'PM Vishwakarma', 'KCC', 'Stand-Up India'],
         },
         {
-          id: 'search-demo-3',
+          id: 'search-demo-4',
           query: 'Bina bank gaye Mudra loan kaise le',
           timestamp: new Date(Date.now() - 3600000).toISOString(),
           resultsCount: 8,
           isBlocked: false,
           userIp: '110.227.88.14 (Lucknow, UP)',
+          matchedSchemes: ['PM SVANidhi', 'PM MUDRA Yojana', 'PMEGP', 'PM Vishwakarma', 'Kisan Credit Card', 'PMAY Housing', 'Vidya Lakshmi', 'MSME Credit'],
         },
         {
-          id: 'search-demo-4',
+          id: 'search-demo-5',
           query: 'PM Vishwakarma 15000 toolkit voucher apply',
           timestamp: new Date(Date.now() - 7200000).toISOString(),
           resultsCount: 3,
           isBlocked: false,
           userIp: '106.208.19.44 (Patna, Bihar)',
+          matchedSchemes: ['PM Vishwakarma Artisan Credit', 'PMEGP', 'PM SVANidhi'],
         },
       ];
       try {
@@ -434,12 +453,136 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setChatLogs(loaded);
   };
 
+  // Fetch Citizen Helpdesk Tickets
+  const fetchHelpdeskTickets = () => {
+    try {
+      const savedStr = localStorage.getItem('jandhan_helpdesk_tickets');
+      if (savedStr) {
+        const parsed: HelpdeskChatTicket[] = JSON.parse(savedStr);
+        if (parsed.length > 0) {
+          setHelpdeskTickets(parsed);
+          if (!selectedTicketId) setSelectedTicketId(parsed[0].ticketId);
+          return;
+        }
+      }
+    } catch (e) {}
+
+    const defaults: HelpdeskChatTicket[] = [
+      {
+        ticketId: 'TICK-89421',
+        citizenName: 'Ramesh Kumar Verma',
+        citizenPhone: '+91 98765 43210',
+        citizenAadhaar: '987654321098',
+        applicationId: 'APP-2026-89421',
+        lastMessage: 'Mera PMEGP 35% subsidy loan review file me kab pass hoga? DPR upload kar diya hai.',
+        lastUpdated: new Date().toISOString(),
+        status: 'open',
+        messages: [
+          {
+            id: 'hd-m-1',
+            sender: 'user',
+            text: 'Namaste Bank Officer, mera PMEGP 35% subsidy loan review file me kab pass hoga? DPR aur caste cert upload kar diya hai.',
+            timestamp: new Date(Date.now() - 3600000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            citizenName: 'Ramesh Kumar Verma',
+            citizenAadhaar: '987654321098',
+            applicationId: 'APP-2026-89421',
+          },
+        ],
+      },
+      {
+        ticketId: 'TICK-64192',
+        citizenName: 'Sunita Devi',
+        citizenPhone: '+91 98123 45678',
+        citizenAadhaar: '876543210987',
+        applicationId: 'APP-2026-64192',
+        lastMessage: 'PM Vishwakarma ₹15,000 free toolkit e-voucher kab milega?',
+        lastUpdated: new Date(Date.now() - 7200000).toISOString(),
+        status: 'open',
+        messages: [
+          {
+            id: 'hd-m-2',
+            sender: 'user',
+            text: 'Sir, tailoring machine expansion ke liye PM Vishwakarma ₹15,000 free toolkit e-voucher aur ₹2 Lakh credit kab approve hoga?',
+            timestamp: new Date(Date.now() - 7200000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            citizenName: 'Sunita Devi',
+            citizenAadhaar: '876543210987',
+            applicationId: 'APP-2026-64192',
+          },
+        ],
+      },
+      {
+        ticketId: 'TICK-99310',
+        citizenName: 'Shekhar Kumar Yadav',
+        citizenPhone: '+91 98765 43210',
+        citizenAadhaar: '987654321098',
+        applicationId: 'APP-2026-89421',
+        lastMessage: 'Kirana shop ke liye Mudra loan aur PMEGP file check kar ke pass kar dijiye.',
+        lastUpdated: new Date(Date.now() - 10800000).toISOString(),
+        status: 'open',
+        messages: [
+          {
+            id: 'hd-m-3',
+            sender: 'user',
+            text: 'Admin sir, Kirana shop business unit ke liye PMEGP 35% subsidy loan details submit ki hai, kripya check karke pass karein.',
+            timestamp: new Date(Date.now() - 10800000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            citizenName: 'Shekhar Kumar Yadav',
+            citizenAadhaar: '987654321098',
+            applicationId: 'APP-2026-89421',
+          },
+        ],
+      },
+    ];
+
+    setHelpdeskTickets(defaults);
+    if (!selectedTicketId) setSelectedTicketId(defaults[0].ticketId);
+    try {
+      localStorage.setItem('jandhan_helpdesk_tickets', JSON.stringify(defaults));
+    } catch (e) {}
+  };
+
   useEffect(() => {
     if (isAdminAuth) {
       fetchSearchLogs();
       fetchChatLogs();
+      fetchHelpdeskTickets();
     }
   }, [isAdminAuth]);
+
+  // Sync Helpdesk tickets periodically when on helpdesk tab
+  useEffect(() => {
+    if (!isAdminAuth || activeTab !== 'helpdesk') return;
+    const interval = setInterval(() => {
+      fetchHelpdeskTickets();
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [isAdminAuth, activeTab]);
+
+  const handleSendAdminHelpdeskReply = (ticketId: string, replyText: string) => {
+    const updated = helpdeskTickets.map((t) => {
+      if (t.ticketId === ticketId) {
+        const newMsg: HelpdeskChatMessage = {
+          id: `hd-reply-${Date.now()}`,
+          sender: 'admin',
+          text: replyText.trim(),
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          citizenName: 'Bank Nodal Officer (Admin)',
+        };
+        return {
+          ...t,
+          status: 'replied' as const,
+          lastMessage: replyText.trim(),
+          lastUpdated: new Date().toISOString(),
+          messages: [...t.messages, newMsg],
+        };
+      }
+      return t;
+    });
+
+    setHelpdeskTickets(updated);
+    try {
+      localStorage.setItem('jandhan_helpdesk_tickets', JSON.stringify(updated));
+    } catch (e) {}
+  };
 
   const toggleModeration = async () => {
     try {
@@ -819,6 +962,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </button>
 
         <button
+          id="admin-tab-helpdesk"
+          onClick={() => {
+            setActiveTab('helpdesk');
+            fetchHelpdeskTickets();
+          }}
+          className={`pb-2 px-3 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-all flex items-center gap-1.5 ${
+            activeTab === 'helpdesk'
+              ? 'border-emerald-600 text-emerald-700 dark:text-emerald-400'
+              : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+          }`}
+        >
+          <Headphones className="w-4 h-4 text-amber-500" />
+          <span>Live Citizen Helpdesk Chat ({helpdeskTickets.filter(t => t.status === 'open').length})</span>
+        </button>
+
+        <button
           id="admin-tab-chat-logs"
           onClick={() => {
             setActiveTab('chat_logs');
@@ -1041,7 +1200,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {formatSafeDate(log.timestamp)}
                         </td>
                         <td className="py-3 px-4 font-bold text-slate-700 dark:text-slate-300">
-                          {log.resultsCount} Schemes Found
+                          <div>
+                            <span className="font-extrabold font-mono text-emerald-600 dark:text-emerald-400 block">
+                              {log.resultsCount} Schemes Matched
+                            </span>
+                            {log.matchedSchemes && log.matchedSchemes.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1 font-sans font-normal">
+                                {log.matchedSchemes.slice(0, 4).map((schName, sIdx) => (
+                                  <span key={sIdx} className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                    ✓ {schName}
+                                  </span>
+                                ))}
+                                {log.matchedSchemes.length > 4 && (
+                                  <span className="text-[10px] font-bold text-slate-400 self-center">+{log.matchedSchemes.length - 4} more</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="py-3 px-4">
                           {log.isBlocked ? (
@@ -1066,7 +1241,177 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
-      {/* Tab 3: AI Chatbot Intent Logs */}
+      {/* Tab 3: Live Citizen Helpdesk Chat */}
+      {activeTab === 'helpdesk' && (
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs min-h-[550px] flex flex-col md:flex-row">
+            {/* Left Sidebar: Tickets List */}
+            <div className="w-full md:w-80 border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex flex-col shrink-0">
+              <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                  <h3 className="font-extrabold text-slate-900 dark:text-white text-sm flex items-center gap-1.5">
+                    <Headphones className="w-4 h-4 text-amber-500" />
+                    Citizen Helpdesk Tickets
+                  </h3>
+                  <p className="text-[10px] text-slate-400">Direct Citizen Support Inquiry</p>
+                </div>
+                <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-bold text-[10px]">
+                  {helpdeskTickets.length} Tickets
+                </span>
+              </div>
+
+              <div className="flex-1 overflow-y-auto divide-y divide-slate-200 dark:divide-slate-800 text-xs">
+                {helpdeskTickets.length === 0 ? (
+                  <div className="p-6 text-center text-slate-400">No support tickets found.</div>
+                ) : (
+                  helpdeskTickets.map((t) => {
+                    const isSelected = selectedTicketId === t.ticketId;
+                    return (
+                      <button
+                        key={t.ticketId}
+                        onClick={() => setSelectedTicketId(t.ticketId)}
+                        className={`w-full p-3.5 text-left transition-all flex flex-col gap-1 ${
+                          isSelected
+                            ? 'bg-white dark:bg-slate-900 border-l-4 border-amber-500 shadow-xs'
+                            : 'hover:bg-slate-100 dark:hover:bg-slate-900/50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-slate-900 dark:text-white truncate max-w-[140px]">
+                            {t.citizenName}
+                          </span>
+                          <span
+                            className={`text-[9px] font-bold px-1.5 py-0.5 rounded capitalize ${
+                              t.status === 'open'
+                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                                : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                            }`}
+                          >
+                            {t.status}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                          {t.lastMessage}
+                        </p>
+                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-0.5">
+                          <span>{t.ticketId}</span>
+                          <span>{formatSafeDate(t.lastUpdated)}</span>
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Right Content Area: Active Conversation & Reply */}
+            <div className="flex-1 flex flex-col bg-white dark:bg-slate-900">
+              {helpdeskTickets.find(t => t.ticketId === selectedTicketId) ? (
+                (() => {
+                  const activeTicket = helpdeskTickets.find(t => t.ticketId === selectedTicketId)!;
+                  return (
+                    <>
+                      {/* Header: Citizen Profile & App Summary */}
+                      <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex flex-wrap items-center justify-between gap-3 text-xs">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-extrabold text-slate-900 dark:text-white text-base">
+                              {activeTicket.citizenName}
+                            </h4>
+                            <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 text-[10px] font-bold font-mono">
+                              Aadhaar: XXXX-XXXX-{activeTicket.citizenAadhaar.slice(-4)}
+                            </span>
+                          </div>
+                          <p className="text-slate-500 text-[11px] font-mono mt-0.5">
+                            Phone: {activeTicket.citizenPhone} • Tracking ID: {activeTicket.applicationId || 'APP-2026-89421'}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const matchedApp = applications.find(a => a.trackingId === activeTicket.applicationId || a.applicantAadhaar === activeTicket.citizenAadhaar);
+                              if (matchedApp) setSelectedApp(matchedApp);
+                              else alert(`Applicant Profile:\nName: ${activeTicket.citizenName}\nAadhaar: ${activeTicket.citizenAadhaar}\nPhone: ${activeTicket.citizenPhone}`);
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors"
+                          >
+                            Review Customer File
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Chat Messages Thread */}
+                      <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50 dark:bg-slate-950/40 text-xs min-h-[300px]">
+                        {activeTicket.messages.map((m) => (
+                          <div
+                            key={m.id}
+                            className={`flex flex-col ${
+                              m.sender === 'admin' ? 'items-end' : 'items-start'
+                            }`}
+                          >
+                            <div
+                              className={`max-w-[80%] p-3.5 rounded-2xl space-y-1 ${
+                                m.sender === 'admin'
+                                  ? 'bg-emerald-600 text-white rounded-br-xs shadow-md'
+                                  : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-bl-xs shadow-xs'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-3 text-[10px] font-bold opacity-80 border-b border-black/10 dark:border-white/10 pb-1">
+                                <span>{m.sender === 'admin' ? '👨‍💼 Bank Nodal Officer (You)' : m.citizenName || activeTicket.citizenName}</span>
+                                <span className="font-mono">{m.timestamp}</span>
+                              </div>
+                              <p className="leading-relaxed whitespace-pre-wrap pt-0.5">{m.text}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Admin Reply Box */}
+                      <div className="p-3.5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            if (!adminReplyText.trim()) return;
+                            handleSendAdminHelpdeskReply(activeTicket.ticketId, adminReplyText);
+                            setAdminReplyText('');
+                          }}
+                          className="flex items-center gap-2"
+                        >
+                          <input
+                            type="text"
+                            value={adminReplyText}
+                            onChange={(e) => setAdminReplyText(e.target.value)}
+                            placeholder={`Write reply for ${activeTicket.citizenName} (e.g. Aapka PMEGP loan file pass ho gaya hai)...`}
+                            className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
+                          />
+                          <button
+                            type="submit"
+                            disabled={!adminReplyText.trim()}
+                            className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs shadow-md disabled:opacity-50 flex items-center gap-1.5"
+                          >
+                            <Send className="w-4 h-4" />
+                            <span>Send Reply (उत्तर भेजें)</span>
+                          </button>
+                        </form>
+                      </div>
+                    </>
+                  );
+                })()
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400 space-y-2">
+                  <Headphones className="w-12 h-12 text-amber-500/50" />
+                  <h4 className="font-bold text-slate-700 dark:text-slate-300">Select a Citizen Support Ticket</h4>
+                  <p className="text-xs">Click any ticket on the left panel to inspect citizen queries and send live replies.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 4: AI Chatbot Intent Logs */}
       {activeTab === 'chat_logs' && (
         <div className="space-y-6">
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
@@ -1335,124 +1680,192 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* Application Review Drawer / Modal */}
       {selectedApp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/85 backdrop-blur-md">
           <div 
             id="admin-review-modal"
-            className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[90vh] flex flex-col"
+            className="relative w-full max-w-4xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[92vh] flex flex-col"
           >
             {/* Modal Header */}
-            <div className="p-6 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+            <div className="p-5 bg-gradient-to-r from-slate-900 via-slate-950 to-amber-950 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
               <div>
-                <span className="text-xs text-amber-400 font-mono uppercase font-bold">
-                  Officer File Review
-                </span>
-                <h3 className="text-lg font-bold font-mono">{selectedApp.trackingId}</h3>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 text-[10px] font-extrabold uppercase font-mono">
+                    Complete 5-Step Customer Audit
+                  </span>
+                  <span className="text-xs font-mono font-bold text-slate-300">
+                    Tracking ID: {selectedApp.trackingId}
+                  </span>
+                </div>
+                <h3 className="text-base sm:text-lg font-extrabold font-serif text-white mt-1">
+                  Applicant Review File: {selectedApp.applicantName}
+                </h3>
               </div>
               <button
                 onClick={() => setSelectedApp(null)}
-                className="text-white/60 hover:text-white text-xs font-bold"
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold text-sm transition-colors"
               >
-                Close
+                ✕
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-6 text-xs">
-              {/* Applicant Info */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                <div>
-                  <span className="text-slate-400 block font-bold">Applicant</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{selectedApp.applicantName}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block font-bold">Aadhaar (UIDAI Verified)</span>
-                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
-                    XXXX-XXXX-{selectedApp.applicantAadhaar.slice(-4)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block font-bold">Category</span>
-                  <span className="font-bold text-amber-600 dark:text-amber-400 uppercase">
-                    {selectedApp.applicantCategory}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block font-bold">Loan Scheme</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{selectedApp.schemeName}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block font-bold">Requested Amount</span>
-                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+            {/* Modal Body: 5 Step Cards */}
+            <div className="p-6 overflow-y-auto space-y-6 text-xs bg-slate-50 dark:bg-slate-950">
+              
+              {/* Step 1: Requested Loan & Purpose */}
+              <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                  <h4 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
+                    <span className="w-6 h-6 rounded-full bg-amber-500 text-slate-950 font-mono font-bold text-xs flex items-center justify-center">1</span>
+                    Step 1: Scheme & Loan Requirement Details
+                  </h4>
+                  <span className="font-mono text-emerald-600 dark:text-emerald-400 font-extrabold text-sm">
                     {formatINR(selectedApp.requestedAmount)}
                   </span>
                 </div>
-                <div>
-                  <span className="text-slate-400 block font-bold">Interest & Tenure</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">
-                    {selectedApp.interestRate}% • {selectedApp.tenureMonths} Mo
-                  </span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-sans">
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Scheme Name</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{selectedApp.schemeName}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Loan Purpose</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedApp.purpose || 'Business Unit Expansion'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Tenure & EMI</span>
+                    <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{selectedApp.tenureMonths} Months (₹{selectedApp.monthlyEmi?.toLocaleString('en-IN') || '27,500'}/mo)</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Interest Rate</span>
+                    <span className="font-mono font-bold text-emerald-600">{selectedApp.interestRate || 8.5}% p.a.</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Biometric Match Score */}
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                <div>
-                  <h4 className="font-bold text-slate-800 dark:text-slate-200">
-                    Biometric & Liveness Verification
+              {/* Step 2: Applicant Identity & e-KYC */}
+              <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                  <h4 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
+                    <span className="w-6 h-6 rounded-full bg-blue-500 text-white font-mono font-bold text-xs flex items-center justify-center">2</span>
+                    Step 2: Applicant Identity, Aadhaar & PAN Validation
                   </h4>
-                  <p className="text-slate-500 text-[11px]">
-                    Token: {selectedApp.biometric?.token || 'BIO-AUTH-UIDAI-OK'}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className="text-base font-extrabold font-mono text-emerald-600 dark:text-emerald-400">
-                    {selectedApp.biometric?.faceMatchScore || 98.4}% Match
+                  <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-[10px]">
+                    ✓ UIDAI e-KYC Verified
                   </span>
                 </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-sans font-bold">Full Name</span>
+                    <span className="font-bold text-slate-900 dark:text-white font-sans">{selectedApp.applicantName}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-sans font-bold">12-Digit Aadhaar</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{selectedApp.applicantAadhaar || '987654321098'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-sans font-bold">10-Char PAN Card</span>
+                    <span className="font-bold text-amber-600 dark:text-amber-400">{selectedApp.applicantPan || 'ABCDE1234F'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-sans font-bold">Category & State</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200 font-sans">{selectedApp.applicantCategory.toUpperCase()} • {selectedApp.applicantState}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-sans font-bold">Mobile Phone</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{selectedApp.applicantPhone}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-sans font-bold">Email Address</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">{selectedApp.applicantEmail}</span>
+                  </div>
+                </div>
               </div>
 
-              {/* KYC Identity & Bank Verification Summary */}
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 space-y-2 text-xs">
-                <h4 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  Verified KYC & Bank Account Details
-                </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 font-mono">
+              {/* Step 3: Family, Parent & Nominee Details */}
+              <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                  <h4 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
+                    <span className="w-6 h-6 rounded-full bg-purple-500 text-white font-mono font-bold text-xs flex items-center justify-center">3</span>
+                    Step 3: Family Co-borrower & Nominee Details
+                  </h4>
+                  <span className="text-xs text-purple-600 dark:text-purple-400 font-bold">
+                    Legal Heirs Verified
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Parent Details */}
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1">
+                    <span className="font-bold text-slate-700 dark:text-slate-300 block text-[11px]">Father & Mother Details (Co-borrower)</span>
+                    <div className="font-mono text-[11px] space-y-0.5">
+                      <p><span className="text-slate-400 font-sans">Father:</span> {selectedApp.parentDetails?.fatherName || 'Late Shri Ramcharan Verma'} (Aadhaar: {selectedApp.parentDetails?.fatherAadhaar || 'XXXX-XXXX-9912'})</p>
+                      <p><span className="text-slate-400 font-sans">Mother:</span> {selectedApp.parentDetails?.motherName || 'Smt. Shanti Devi'} (Aadhaar: {selectedApp.parentDetails?.motherAadhaar || 'XXXX-XXXX-4410'})</p>
+                    </div>
+                  </div>
+                  {/* Nominee Details */}
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1">
+                    <span className="font-bold text-slate-700 dark:text-slate-300 block text-[11px]">Nominee Declaration</span>
+                    <div className="font-mono text-[11px] space-y-0.5">
+                      <p><span className="text-slate-400 font-sans">Nominee Name:</span> {selectedApp.nomineeDetails?.name || 'Sunita Verma'} ({selectedApp.nomineeDetails?.relation || 'Wife'})</p>
+                      <p><span className="text-slate-400 font-sans">Age & Contact:</span> {selectedApp.nomineeDetails?.age || 36} Yrs • {selectedApp.nomineeDetails?.phone || selectedApp.applicantPhone}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 4: Bank Account & Disbursal Gateway */}
+              <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                  <h4 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
+                    <span className="w-6 h-6 rounded-full bg-emerald-600 text-white font-mono font-bold text-xs flex items-center justify-center">4</span>
+                    Step 4: Bank Account & Stamp Duty Processing Status
+                  </h4>
+                  <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-[10px]">
+                    DBT Bank Linked
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 font-mono">
                   <div>
-                    <span className="text-slate-400 block text-[10px] uppercase font-sans">Aadhaar Number</span>
-                    <span className="font-bold text-slate-900 dark:text-white">
-                      {selectedApp.applicantAadhaar || 'XXXX-XXXX-1098'}
-                    </span>
+                    <span className="text-slate-400 block text-[10px] uppercase font-sans font-bold">Bank Name</span>
+                    <span className="font-bold text-slate-900 dark:text-white font-sans">{selectedApp.bankDetails?.bankName || 'State Bank of India'}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[10px] uppercase font-sans">PAN Card Number</span>
-                    <span className="font-bold text-slate-900 dark:text-white">
-                      {selectedApp.applicantPan || 'ABCDE1234F'}
-                    </span>
+                    <span className="text-slate-400 block text-[10px] uppercase font-sans font-bold">Account Number</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{selectedApp.bankDetails?.accountNo || '987654321098'}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[10px] uppercase font-sans">Bank Account</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                      {selectedApp.bankDetails?.accountNo || '987654321098'} ({selectedApp.bankDetails?.ifsc || 'SBIN0001234'})
+                    <span className="text-slate-400 block text-[10px] uppercase font-sans font-bold">IFSC Code</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{selectedApp.bankDetails?.ifsc || 'SBIN0001234'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-sans font-bold">Stamp Duty / Fee</span>
+                    <span className="font-bold text-emerald-600 font-sans">
+                      {selectedApp.isFeePaid ? `✓ Cleared (${selectedApp.feeTxId || 'UPI-98124'})` : 'Exempt / Government Waived'}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Documents List */}
-              <div className="space-y-3">
-                <h4 className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-xs">
-                  Uploaded Verification Documents ({selectedApp.documents.length})
-                </h4>
+              {/* Step 5: Biometrics & Document Inspection */}
+              <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                  <h4 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
+                    <span className="w-6 h-6 rounded-full bg-teal-600 text-white font-mono font-bold text-xs flex items-center justify-center">5</span>
+                    Step 5: Biometric Match & Verification Documents ({selectedApp.documents.length})
+                  </h4>
+                  <span className="text-xs font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
+                    {selectedApp.biometric?.faceMatchScore || 98.7}% Biometric Liveness
+                  </span>
+                </div>
+
                 <div className="space-y-2">
                   {selectedApp.documents.map((doc) => (
                     <div
                       key={doc.id}
-                      className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-900"
+                      className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/40"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs">
-                          <FileText className="w-5 h-5" />
+                        <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center font-bold text-xs">
+                          <FileText className="w-4 h-4" />
                         </div>
                         <div>
                           <p className="font-bold text-slate-800 dark:text-slate-200 text-xs">{doc.name}</p>
@@ -1461,40 +1874,112 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-[10px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                          {doc.status}
+                          {doc.status.toUpperCase()}
                         </span>
                         <button
                           type="button"
-                          onClick={() => alert(`📄 Document Inspection Viewer:\n\nDocument Name: ${doc.name}\nFile: ${doc.fileName}\nStatus: Verified e-KYC Proof\nApplicant Aadhaar: ${selectedApp.applicantAadhaar}\nApplicant Name: ${selectedApp.applicantName}`)}
-                          className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 font-bold text-[11px] flex items-center gap-1 border border-emerald-200 dark:border-emerald-800"
+                          onClick={() => setInspectDocModal({ isOpen: true, doc, app: selectedApp })}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs transition-colors"
                         >
                           <Eye className="w-3.5 h-3.5" />
-                          <span>View Doc</span>
+                          <span>View & Inspect</span>
                         </button>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
+
             </div>
 
-            {/* Modal Actions */}
-            <div className="p-5 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-3">
+            {/* Footer Action Buttons */}
+            <div className="p-5 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0">
               <button
-                onClick={() => setRejectionModalOpen(true)}
-                disabled={isProcessingAction}
-                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs"
+                onClick={() => setSelectedApp(null)}
+                className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-xs"
               >
-                Reject with Reason
+                Close Drawer
               </button>
 
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setRejectionModalOpen(true)}
+                  disabled={isProcessingAction}
+                  className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs"
+                >
+                  Reject with Reason
+                </button>
+
+                <button
+                  onClick={() => handleApprove(selectedApp)}
+                  disabled={isProcessingAction}
+                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  Pass & Issue Sanction Letter
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Inspection & e-KYC Modal */}
+      {inspectDocModal.isOpen && inspectDocModal.doc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md">
+          <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-emerald-500/30 p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-emerald-500" />
+                <h4 className="text-base font-extrabold text-slate-900 dark:text-white font-serif">
+                  Document Inspection & e-KYC Proof
+                </h4>
+              </div>
               <button
-                onClick={() => handleApprove(selectedApp)}
-                disabled={isProcessingAction}
-                className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm"
+                onClick={() => setInspectDocModal({ isOpen: false, doc: null, app: null })}
+                className="text-slate-400 hover:text-slate-600 font-bold"
               >
-                <CheckCircle2 className="w-4 h-4" />
-                Sanction & Issue Letter
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-emerald-900 dark:text-emerald-200 text-sm">
+                    {inspectDocModal.doc.name}
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-emerald-600 text-white font-mono text-[10px] font-bold">
+                    VERIFIED E-KYC STAMP
+                  </span>
+                </div>
+                <div className="font-mono text-slate-700 dark:text-slate-300 text-[11px] space-y-1 pt-1">
+                  <p><span className="text-slate-400 font-sans">File Name:</span> {inspectDocModal.doc.fileName}</p>
+                  <p><span className="text-slate-400 font-sans">File Size:</span> {inspectDocModal.doc.fileSize}</p>
+                  <p><span className="text-slate-400 font-sans">Applicant Name:</span> {inspectDocModal.app?.applicantName}</p>
+                  <p><span className="text-slate-400 font-sans">Aadhaar Ref:</span> {inspectDocModal.app?.applicantAadhaar}</p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-2">
+                <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs">
+                  📄 OCR Extracted Data & Digital Audit:
+                </span>
+                <pre className="font-mono text-[11px] text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+{`Document Type: ${inspectDocModal.doc.type?.toUpperCase()}
+Name Match Score: 100% (Matched with UIDAI Master Record)
+Issuer: Government of India Digital Locker
+Status: Legitimate, Original & Authentic`}
+                </pre>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                onClick={() => setInspectDocModal({ isOpen: false, doc: null, app: null })}
+                className="px-5 py-2 rounded-xl bg-emerald-600 text-white font-extrabold text-xs shadow-md"
+              >
+                Done Inspecting
               </button>
             </div>
           </div>

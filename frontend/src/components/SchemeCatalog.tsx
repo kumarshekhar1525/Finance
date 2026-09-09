@@ -33,11 +33,93 @@ import { Scheme, LoanCategory, BeneficiaryFilter, SupportedLanguage } from '../t
 import { INDIAN_STATES, LOAN_CATEGORIES_METADATA } from '../data/schemes';
 import { translations } from '../lib/i18n';
 
+export const matchSchemeWithQuery = (scheme: Scheme, query: string): boolean => {
+  if (!query.trim()) return true;
+  const q = query.toLowerCase().trim();
+  
+  // 1. Direct text inclusion
+  if (
+    scheme.name.toLowerCase().includes(q) ||
+    scheme.nameHi.includes(q) ||
+    scheme.tagline.toLowerCase().includes(q) ||
+    (scheme.taglineHi && scheme.taglineHi.includes(q)) ||
+    scheme.department.toLowerCase().includes(q)
+  ) {
+    return true;
+  }
+
+  // 2. Tokenized & Keyword Synonym Matching
+  const tokens = q.split(/[\s,&/-]+/).filter((t) => t.length > 1);
+
+  const isKiranaShop = tokens.some((t) => ['kirana', 'shop', 'shops', 'dukan', 'vendor', 'vendors', 'street', 'rehri', 'patri', 'dukindar'].includes(t));
+  if (isKiranaShop) {
+    if (scheme.category === 'chota_loan' || scheme.category === 'business_loan' || scheme.name.includes('SVANidhi') || scheme.name.includes('PMEGP') || scheme.name.includes('MUDRA')) {
+      return true;
+    }
+  }
+
+  const isSubsidy = tokens.some((t) => ['subsidy', '35%', '25%', '15%', 'grant', 'discount'].includes(t));
+  if (isSubsidy) {
+    if ((scheme.subsidyPercentage && scheme.subsidyPercentage > 0) || scheme.name.includes('PMEGP') || scheme.name.includes('Vishwakarma') || scheme.name.includes('Stand-Up')) {
+      return true;
+    }
+  }
+
+  const isMudra = tokens.some((t) => ['mudra', 'shishu', 'kishor', 'tarun', 'micro'].includes(t));
+  if (isMudra) {
+    if (scheme.name.includes('MUDRA') || scheme.name.includes('SVANidhi') || scheme.category === 'chota_loan') {
+      return true;
+    }
+  }
+
+  const isVishwakarma = tokens.some((t) => ['vishwakarma', 'artisan', 'craftsman', 'toolkit', 'badhai', 'karigar', 'voucher'].includes(t));
+  if (isVishwakarma) {
+    if (scheme.name.includes('Vishwakarma') || scheme.name.includes('PMEGP')) {
+      return true;
+    }
+  }
+
+  const isKisan = tokens.some((t) => ['kisan', 'agri', 'crop', 'farmer', 'kcc', 'krishi', 'farming'].includes(t));
+  if (isKisan) {
+    if (scheme.category === 'agriculture_loan' || scheme.name.includes('Kisan') || scheme.name.includes('KCC')) {
+      return true;
+    }
+  }
+
+  const isHome = tokens.some((t) => ['home', 'housing', 'awas', 'ghar', 'makan'].includes(t));
+  if (isHome) {
+    if (scheme.category === 'home_loan' || scheme.name.includes('Awas') || scheme.name.includes('PMAY')) {
+      return true;
+    }
+  }
+
+  const isStudent = tokens.some((t) => ['student', 'study', 'education', 'vidya', 'lakshmi'].includes(t));
+  if (isStudent) {
+    if (scheme.category === 'study_loan' || scheme.name.includes('Vidya')) {
+      return true;
+    }
+  }
+
+  for (const token of tokens) {
+    if (token.length > 2) {
+      if (
+        scheme.name.toLowerCase().includes(token) ||
+        scheme.tagline.toLowerCase().includes(token) ||
+        scheme.features.some((f) => f.toLowerCase().includes(token))
+      ) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+
 interface SchemeCatalogProps {
   schemes: Scheme[];
   currentLang: SupportedLanguage;
   onSelectSchemeToApply: (scheme: Scheme) => void;
-  onSearchLog: (query: string, resultsCount: number) => Promise<{ isBlocked?: boolean; flagReason?: string }>;
+  onSearchLog: (query: string, resultsCount: number, matchedSchemes?: string[]) => Promise<{ isBlocked?: boolean; flagReason?: string }>;
   onNavigateToEligibility?: () => void;
 }
 
@@ -147,14 +229,10 @@ export const SchemeCatalog: React.FC<SchemeCatalogProps> = ({
       return;
     }
 
-    const filtered = schemes.filter(
-      (s) =>
-        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.nameHi.includes(searchQuery) ||
-        s.tagline.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const matched = schemes.filter((s) => matchSchemeWithQuery(s, searchQuery));
+    const matchedNames = matched.map((s) => s.nameHi || s.name);
 
-    const res = await onSearchLog(searchQuery, filtered.length);
+    const res = await onSearchLog(searchQuery, matched.length, matchedNames);
     if (res?.isBlocked) {
       setSearchBlockedNotice(res.flagReason || 'Search query prohibited by Banking Compliance Moderation.');
     } else {
@@ -180,15 +258,9 @@ export const SchemeCatalog: React.FC<SchemeCatalogProps> = ({
         return false;
       }
     }
-    // Search match
+    // Search match using fuzzy & synonym dictionary
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      const match =
-        scheme.name.toLowerCase().includes(q) ||
-        scheme.nameHi.includes(q) ||
-        scheme.tagline.toLowerCase().includes(q) ||
-        scheme.department.toLowerCase().includes(q);
-      if (!match) return false;
+      if (!matchSchemeWithQuery(scheme, searchQuery)) return false;
     }
     return true;
   });

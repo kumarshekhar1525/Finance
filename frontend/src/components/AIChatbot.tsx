@@ -12,12 +12,18 @@ import {
   User, 
   ShieldCheck,
   Minimize2,
-  Maximize2
+  Maximize2,
+  Headphones,
+  UserCheck,
+  Clock,
+  CheckCircle2
 } from 'lucide-react';
-import { SupportedLanguage } from '../types';
+import { SupportedLanguage, UserProfile, LoanApplication, HelpdeskChatTicket, HelpdeskChatMessage } from '../types';
 
 interface AIChatbotProps {
   currentLang: SupportedLanguage;
+  user?: UserProfile | null;
+  applications?: LoanApplication[];
 }
 
 interface Message {
@@ -27,14 +33,18 @@ interface Message {
   timestamp: string;
 }
 
-export const AIChatbot: React.FC<AIChatbotProps> = ({ currentLang }) => {
+export const AIChatbot: React.FC<AIChatbotProps> = ({ currentLang, user, applications = [] }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [chatMode, setChatMode] = useState<'ai' | 'helpdesk'>('ai');
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
   
+  // Helpdesk Ticket State
+  const [helpdeskTicket, setHelpdeskTicket] = useState<HelpdeskChatTicket | null>(null);
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'msg-welcome',
@@ -57,7 +67,59 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ currentLang }) => {
     if (isOpen) {
       scrollToBottom();
     }
-  }, [messages, isOpen]);
+  }, [messages, helpdeskTicket, isOpen, chatMode]);
+
+  // Load Helpdesk Tickets from localStorage
+  const loadHelpdeskTicket = () => {
+    try {
+      const savedStr = localStorage.getItem('jandhan_helpdesk_tickets');
+      const tickets: HelpdeskChatTicket[] = savedStr ? JSON.parse(savedStr) : [];
+      
+      const citizenAadhaar = user?.aadhaarNumber || '987654321098';
+      let userTicket = tickets.find((t) => t.citizenAadhaar === citizenAadhaar);
+      
+      if (!userTicket && tickets.length > 0) {
+        userTicket = tickets[0];
+      }
+
+      if (!userTicket) {
+        userTicket = {
+          ticketId: `TICK-${Math.floor(10000 + Math.random() * 90000)}`,
+          citizenName: user?.fullName || 'Shekhar Kumar Yadav',
+          citizenPhone: user?.phone || '+91 98765 43210',
+          citizenAadhaar: citizenAadhaar,
+          applicationId: applications.length > 0 ? applications[0].trackingId : 'APP-2026-89421',
+          lastMessage: 'Portal support helpdesk initialized.',
+          lastUpdated: new Date().toISOString(),
+          status: 'open',
+          messages: [
+            {
+              id: 'hd-init-1',
+              sender: 'admin',
+              text: 'नमस्ते! मैं बैंक नोडल अधिकारी सपोर्ट डेस्क हूँ। आप अपना कोई भी सवाल या ऋण संबंधी समस्या यहाँ लिखकर पूछ सकते हैं। जब भी नोडल अधिकारी पोर्टल खोलेंगे, आपका जवाब सीधे यहाँ दिखाई देगा।',
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              citizenName: 'Bank Nodal Officer',
+            },
+          ],
+        };
+      }
+
+      setHelpdeskTicket(userTicket);
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    loadHelpdeskTicket();
+  }, [user]);
+
+  // Sync Helpdesk Ticket periodically when open
+  useEffect(() => {
+    if (!isOpen || chatMode !== 'helpdesk') return;
+    const interval = setInterval(() => {
+      loadHelpdeskTicket();
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [isOpen, chatMode, user]);
 
   // Expert Banking Knowledge Helper for Fallback Answers
   const getLocalBankingResponse = (query: string, lang: string): string => {
@@ -108,6 +170,77 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ currentLang }) => {
     const query = textToSend || inputMessage;
     if (!query.trim() || isLoading) return;
 
+    if (chatMode === 'helpdesk') {
+      // Direct Admin Helpdesk Chat Mode
+      const citizenName = user?.fullName || 'Shekhar Kumar Yadav';
+      const citizenAadhaar = user?.aadhaarNumber || '987654321098';
+      const citizenPhone = user?.phone || '+91 98765 43210';
+      const activeAppId = applications.length > 0 ? applications[0].trackingId : 'APP-2026-89421';
+
+      const newMsg: HelpdeskChatMessage = {
+        id: `hd-msg-${Date.now()}`,
+        sender: 'user',
+        text: query.trim(),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        citizenName,
+        citizenAadhaar,
+        applicationId: activeAppId,
+      };
+
+      try {
+        const savedStr = localStorage.getItem('jandhan_helpdesk_tickets');
+        const tickets: HelpdeskChatTicket[] = savedStr ? JSON.parse(savedStr) : [];
+        let userTicket = tickets.find((t) => t.citizenAadhaar === citizenAadhaar);
+
+        if (userTicket) {
+          userTicket.messages.push(newMsg);
+          userTicket.lastMessage = query.trim();
+          userTicket.lastUpdated = new Date().toISOString();
+          userTicket.status = 'open';
+        } else {
+          userTicket = {
+            ticketId: `TICK-${Math.floor(10000 + Math.random() * 90000)}`,
+            citizenName,
+            citizenPhone,
+            citizenAadhaar,
+            applicationId: activeAppId,
+            lastMessage: query.trim(),
+            lastUpdated: new Date().toISOString(),
+            status: 'open',
+            messages: [newMsg],
+          };
+          tickets.unshift(userTicket);
+        }
+
+        localStorage.setItem('jandhan_helpdesk_tickets', JSON.stringify(tickets));
+        setHelpdeskTicket({ ...userTicket });
+        setInputMessage('');
+
+        // Provide auto acknowledgment after short delay if ticket is open
+        setTimeout(() => {
+          setHelpdeskTicket((prev) => {
+            if (!prev) return null;
+            const ackMsg: HelpdeskChatMessage = {
+              id: `hd-ack-${Date.now()}`,
+              sender: 'admin',
+              text: '✅ आपका सवाल बैंक नोडल अधिकारी के हेल्पडेस्क पोर्टल पर दर्ज कर लिया गया है। नोडल अधिकारी आपका पूरा प्रोफाइल व लोन फ़ाइल देखकर जवाब देंगे।',
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              citizenName: 'Bank Nodal Officer (System)',
+            };
+            return {
+              ...prev,
+              messages: [...prev.messages, ackMsg],
+            };
+          });
+        }, 1200);
+
+      } catch (e) {
+        console.error('Failed to save helpdesk chat message:', e);
+      }
+      return;
+    }
+
+    // Standard AI Sahayak Chat Mode
     const userMsg: Message = {
       id: `msg-${Date.now()}`,
       sender: 'user',
@@ -150,7 +283,7 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ currentLang }) => {
           botResponse: botReply,
           source: 'JanDhan AI Sahayak',
           timestamp: new Date().toISOString(),
-          citizenName: 'Citizen User',
+          citizenName: user?.fullName || 'Citizen User',
         };
         const savedStr = localStorage.getItem('jandhan_chat_logs');
         const saved = savedStr ? JSON.parse(savedStr) : [];
@@ -179,7 +312,7 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ currentLang }) => {
           botResponse: botReply,
           source: 'JanDhan AI Sahayak',
           timestamp: new Date().toISOString(),
-          citizenName: 'Citizen User',
+          citizenName: user?.fullName || 'Citizen User',
         };
         const savedStr = localStorage.getItem('jandhan_chat_logs');
         const saved = savedStr ? JSON.parse(savedStr) : [];
@@ -261,8 +394,8 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ currentLang }) => {
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
           </div>
           <div className="text-left hidden sm:block">
-            <p className="text-xs font-bold leading-none">AI Loan Sahayak</p>
-            <p className="text-[10px] text-emerald-200 leading-tight">Instant 24/7 Answers</p>
+            <p className="text-xs font-bold leading-none">AI Loan & Admin Helpdesk</p>
+            <p className="text-[10px] text-emerald-200 leading-tight">Instant 24/7 Answers & Admin Chat</p>
           </div>
         </button>
       )}
@@ -272,22 +405,26 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ currentLang }) => {
         <div
           id="ai-chatbot-window"
           className={`fixed bottom-5 right-5 z-50 w-full sm:w-96 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col transition-all duration-200 ${
-            isMinimized ? 'h-16' : 'h-[580px] max-h-[85vh]'
+            isMinimized ? 'h-16' : 'h-[600px] max-h-[85vh]'
           }`}
         >
           {/* Chat Header */}
-          <div className="p-4 bg-gradient-to-r from-emerald-700 to-teal-800 text-white flex items-center justify-between shrink-0">
+          <div className="p-3.5 bg-gradient-to-r from-emerald-700 via-teal-800 to-slate-900 text-white flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center border border-white/20">
-                <Bot className="w-5 h-5 text-emerald-200" />
+                {chatMode === 'ai' ? (
+                  <Bot className="w-5 h-5 text-emerald-200" />
+                ) : (
+                  <Headphones className="w-5 h-5 text-amber-300" />
+                )}
               </div>
               <div>
                 <h4 className="text-sm font-bold flex items-center gap-1.5">
-                  AI Loan Sahayak
+                  {chatMode === 'ai' ? 'JanDhan AI Sahayak' : 'Direct Bank Admin Helpdesk'}
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 </h4>
                 <p className="text-[10px] text-emerald-100/90">
-                  Govt. Scheme & Credit Intelligence
+                  {chatMode === 'ai' ? 'Govt Scheme & Credit Intelligence' : 'Live Communication with Bank Officer'}
                 </p>
               </div>
             </div>
@@ -315,74 +452,157 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ currentLang }) => {
 
           {!isMinimized && (
             <>
-              {/* Message List */}
-              <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50 dark:bg-slate-950/40 text-xs">
-                {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex items-start gap-2 ${
-                      msg.sender === 'user' ? 'justify-end' : 'justify-start'
-                    }`}
-                  >
-                    {msg.sender === 'bot' && (
-                      <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 text-[10px] mt-0.5">
-                        <Bot className="w-4 h-4" />
+              {/* Chat Mode Switcher Tabs */}
+              <div className="grid grid-cols-2 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-xs font-bold p-1">
+                <button
+                  type="button"
+                  onClick={() => setChatMode('ai')}
+                  className={`py-1.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                    chatMode === 'ai'
+                      ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Bot className="w-3.5 h-3.5" />
+                  <span>AI Sahayak (एआई सहायक)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChatMode('helpdesk');
+                    loadHelpdeskTicket();
+                  }}
+                  className={`py-1.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                    chatMode === 'helpdesk'
+                      ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Headphones className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Admin Helpdesk (प्रशासक चैट)</span>
+                </button>
+              </div>
+
+              {/* Mode 1: Standard AI Sahayak Chat */}
+              {chatMode === 'ai' && (
+                <>
+                  <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50 dark:bg-slate-950/40 text-xs">
+                    {messages.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`flex items-start gap-2 ${
+                          msg.sender === 'user' ? 'justify-end' : 'justify-start'
+                        }`}
+                      >
+                        {msg.sender === 'bot' && (
+                          <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 text-[10px] mt-0.5">
+                            <Bot className="w-4 h-4" />
+                          </div>
+                        )}
+
+                        <div
+                          className={`max-w-[82%] p-3 rounded-2xl relative space-y-1 ${
+                            msg.sender === 'user'
+                              ? 'bg-emerald-600 text-white rounded-br-xs'
+                              : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-bl-xs border border-slate-200 dark:border-slate-700 shadow-xs'
+                          }`}
+                        >
+                          <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                          <div className="flex items-center justify-between text-[10px] opacity-60 pt-0.5">
+                            <span>{msg.timestamp}</span>
+                            {msg.sender === 'bot' && (
+                              <button
+                                onClick={() => handleReadAloud(msg.text)}
+                                className="p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700"
+                                title="Read Aloud"
+                              >
+                                {isSpeaking ? (
+                                  <VolumeX className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+                                ) : (
+                                  <Volume2 className="w-3.5 h-3.5 text-slate-500" />
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {isLoading && (
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        </div>
+                        <div className="p-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-500">
+                          AI Sahayak is formulating banking advisory...
+                        </div>
                       </div>
                     )}
+                    <div ref={messagesEndRef} />
+                  </div>
 
-                    <div
-                      className={`max-w-[82%] p-3 rounded-2xl relative space-y-1 ${
-                        msg.sender === 'user'
-                          ? 'bg-emerald-600 text-white rounded-br-xs'
-                          : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-bl-xs border border-slate-200 dark:border-slate-700 shadow-xs'
-                      }`}
-                    >
-                      <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-                      <div className="flex items-center justify-between text-[10px] opacity-60 pt-0.5">
-                        <span>{msg.timestamp}</span>
-                        {msg.sender === 'bot' && (
-                          <button
-                            onClick={() => handleReadAloud(msg.text)}
-                            className="p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700"
-                            title="Read Aloud"
-                          >
-                            {isSpeaking ? (
-                              <VolumeX className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
-                            ) : (
-                              <Volume2 className="w-3.5 h-3.5 text-slate-500" />
-                            )}
-                          </button>
-                        )}
+                  {/* Quick Prompt Chips */}
+                  <div className="p-2 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto flex gap-1.5 scrollbar-none">
+                    {quickPrompts.map((prompt, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleSendMessage(prompt)}
+                        className="shrink-0 text-[10px] px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/60 dark:hover:text-emerald-300 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap"
+                      >
+                        {prompt}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Mode 2: Direct Admin Helpdesk Two-Way Communication */}
+              {chatMode === 'helpdesk' && (
+                <div className="flex-1 flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
+                  {/* Citizen Info Strip */}
+                  <div className="px-3 py-2 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-900 text-[11px] flex items-center justify-between shrink-0">
+                    <div className="truncate">
+                      <span className="font-bold text-amber-900 dark:text-amber-300 block">
+                        Citizen Ticket: {helpdeskTicket?.ticketId || 'TICK-NEW'}
+                      </span>
+                      <span className="text-slate-500 text-[10px] font-mono">
+                        Aadhaar: XXXX-XXXX-{(helpdeskTicket?.citizenAadhaar || user?.aadhaarNumber || '1098').slice(-4)} • App: {helpdeskTicket?.applicationId || 'APP-2026-89421'}
+                      </span>
+                    </div>
+                    <span className="shrink-0 px-2 py-0.5 rounded bg-emerald-600 text-white font-bold text-[10px]">
+                      Live Admin Link
+                    </span>
+                  </div>
+
+                  {/* Helpdesk Message History */}
+                  <div className="flex-1 p-3 overflow-y-auto space-y-3 text-xs">
+                    {helpdeskTicket?.messages.map((m) => (
+                      <div
+                        key={m.id}
+                        className={`flex flex-col ${
+                          m.sender === 'user' ? 'items-end' : 'items-start'
+                        }`}
+                      >
+                        <div
+                          className={`max-w-[85%] p-3 rounded-2xl space-y-1 ${
+                            m.sender === 'user'
+                              ? 'bg-amber-600 text-white rounded-br-xs'
+                              : 'bg-emerald-950 text-emerald-100 rounded-bl-xs border border-emerald-800 shadow-md'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2 text-[10px] font-bold pb-1 border-b border-white/10">
+                            <span>{m.sender === 'user' ? user?.fullName || 'Citizen Applicant' : '👨‍💼 Bank Nodal Officer (Admin)'}</span>
+                            <span className="opacity-70 font-mono">{m.timestamp}</span>
+                          </div>
+                          <p className="leading-relaxed whitespace-pre-wrap pt-0.5">{m.text}</p>
+                        </div>
                       </div>
-                    </div>
+                    ))}
+                    <div ref={messagesEndRef} />
                   </div>
-                ))}
-
-                {isLoading && (
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0">
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                    </div>
-                    <div className="p-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-500">
-                      AI Sahayak is formulating banking advisory...
-                    </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Quick Prompt Chips */}
-              <div className="p-2 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto flex gap-1.5 scrollbar-none">
-                {quickPrompts.map((prompt, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSendMessage(prompt)}
-                    className="shrink-0 text-[10px] px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/60 dark:hover:text-emerald-300 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
+                </div>
+              )}
 
               {/* Input Box */}
               <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
@@ -411,14 +631,22 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ currentLang }) => {
                     type="text"
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
-                    placeholder={isListening ? 'बोलिए, सुन रहे हैं...' : 'Type or speak loan question...'}
+                    placeholder={
+                      chatMode === 'helpdesk'
+                        ? 'बैंक नोडल अधिकारी को सवाल भेजें (Write message for Admin)...'
+                        : isListening
+                        ? 'बोलिए, सुन रहे हैं...'
+                        : 'Type or speak loan question...'
+                    }
                     className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
                   />
                   <button
                     id="send-chat-msg-btn"
                     type="submit"
                     disabled={!inputMessage.trim() || isLoading}
-                    className="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white transition-all shrink-0"
+                    className={`p-2.5 rounded-xl text-white transition-all shrink-0 ${
+                      chatMode === 'helpdesk' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                    } disabled:opacity-50`}
                   >
                     <Send className="w-4 h-4" />
                   </button>
