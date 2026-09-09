@@ -425,6 +425,8 @@ export default function App() {
           isBlocked: false,
           userIp: '106.210.45.12 (User Active Session)',
           matchedSchemes: matchedSchemes || [],
+          citizenName: user?.fullName || 'Shekhar Kumar Yadav',
+          citizenAadhaar: user?.aadhaarNumber || '987654321098',
         };
         const existingStr = localStorage.getItem('jandhan_search_logs');
         const existing = existingStr ? JSON.parse(existingStr) : [];

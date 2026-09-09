@@ -1177,6 +1177,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 dark:bg-slate-800 text-slate-400 uppercase tracking-wider font-mono">
                   <tr>
+                    <th className="py-3 px-4">Citizen Applicant</th>
                     <th className="py-3 px-4">Search Query</th>
                     <th className="py-3 px-4">Timestamp</th>
                     <th className="py-3 px-4">Results Count</th>
@@ -1186,13 +1187,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-sans">
                   {searchLogs.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-8 text-center text-slate-400">
+                      <td colSpan={5} className="py-8 text-center text-slate-400">
                         No search logs recorded yet. Search queries on the scheme portal will appear here in real time.
                       </td>
                     </tr>
                   ) : (
                     searchLogs.map((log) => (
                       <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold flex items-center justify-center text-xs shrink-0">
+                              {(log.citizenName || 'Citizen').charAt(0)}
+                            </div>
+                            <div>
+                              <span className="font-bold text-slate-900 dark:text-white block text-xs">
+                                {log.citizenName || 'Shekhar Kumar Yadav'}
+                              </span>
+                              <span className="text-[10px] font-mono text-slate-400">
+                                Aadhaar: XXXX-XXXX-{(log.citizenAadhaar || '1098').slice(-4)}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
                         <td className="py-3 px-4 font-mono font-semibold text-slate-800 dark:text-slate-200">
                           {log.query}
                         </td>
@@ -1437,24 +1453,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 dark:bg-slate-800 text-slate-400 uppercase tracking-wider font-mono">
                   <tr>
-                    <th className="py-3.5 px-4">Timestamp</th>
+                    <th className="py-3.5 px-4">Citizen Applicant & Info</th>
                     <th className="py-3.5 px-4">Citizen Question / Query</th>
                     <th className="py-3.5 px-4">AI Sahayak Response Summary</th>
-                    <th className="py-3.5 px-4">AI Model Source</th>
+                    <th className="py-3.5 px-4">Timestamp</th>
+                    <th className="py-3.5 px-4 text-right">Direct Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-sans">
                   {chatLogs.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-8 text-center text-slate-400">
+                      <td colSpan={5} className="py-8 text-center text-slate-400">
                         No chatbot interactions logged yet. Questions asked to AI Loan Sahayak will be logged here.
                       </td>
                     </tr>
                   ) : (
                     chatLogs.map((item) => (
                       <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <td className="py-3.5 px-4 text-slate-400 font-mono text-[11px] shrink-0">
-                          {formatSafeDate(item.timestamp)}
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-slate-950 font-extrabold flex items-center justify-center text-xs shrink-0 shadow-xs">
+                              {(item.citizenName || 'Shekhar Kumar Yadav').charAt(0)}
+                            </div>
+                            <div>
+                              <span className="font-extrabold text-slate-900 dark:text-white block text-xs">
+                                {item.citizenName || 'Shekhar Kumar Yadav'}
+                              </span>
+                              <span className="text-[10px] font-mono text-slate-400 block">
+                                Aadhaar: XXXX-XXXX-{(item.citizenAadhaar || '987654321098').slice(-4)} • Phone: {item.citizenPhone || '+91 98765 43210'}
+                              </span>
+                            </div>
+                          </div>
                         </td>
                         <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
                           <div className="flex items-center gap-1.5">
@@ -1462,16 +1491,53 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <span>{item.message || item.userQuestion || 'PMEGP / Mudra Loan Query'}</span>
                           </div>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 max-w-md">
+                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 max-w-xs">
                           <p className="line-clamp-2 text-[11px] font-mono leading-relaxed bg-slate-50 dark:bg-slate-800/60 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
                             {item.response || item.botResponse || 'AI Sahayak Loan Advisory'}
                           </p>
                         </td>
-                        <td className="py-3.5 px-4">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border border-purple-200">
-                            <Sparkles className="w-3 h-3 text-purple-500" />
-                            {item.source || 'JanDhan AI Sahayak'}
-                          </span>
+                        <td className="py-3.5 px-4 text-slate-400 font-mono text-[11px] shrink-0">
+                          {formatSafeDate(item.timestamp)}
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const citName = item.citizenName || 'Shekhar Kumar Yadav';
+                              const citAadhaar = item.citizenAadhaar || '987654321098';
+                              const citPhone = item.citizenPhone || '+91 98765 43210';
+                              let ticket = helpdeskTickets.find(t => t.citizenAadhaar === citAadhaar || t.citizenName === citName);
+                              if (!ticket) {
+                                ticket = {
+                                  ticketId: `TICK-${Math.floor(10000 + Math.random() * 90000)}`,
+                                  citizenName: citName,
+                                  citizenPhone: citPhone,
+                                  citizenAadhaar: citAadhaar,
+                                  applicationId: 'APP-2026-89421',
+                                  lastMessage: item.message || item.userQuestion || 'Citizen AI query logged',
+                                  lastUpdated: new Date().toISOString(),
+                                  status: 'open',
+                                  messages: [
+                                    {
+                                      id: `hd-m-${Date.now()}`,
+                                      sender: 'user',
+                                      text: item.message || item.userQuestion || 'Citizen AI loan question',
+                                      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                                      citizenName: citName,
+                                      citizenAadhaar: citAadhaar,
+                                    }
+                                  ]
+                                };
+                                setHelpdeskTickets(prev => [ticket!, ...prev]);
+                              }
+                              setSelectedTicketId(ticket.ticketId);
+                              setActiveTab('helpdesk');
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-[11px] shadow-xs flex items-center gap-1 shrink-0 transition-all ml-auto"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span>Reply (उत्तर दें)</span>
+                          </button>
                         </td>
                       </tr>
                     ))
