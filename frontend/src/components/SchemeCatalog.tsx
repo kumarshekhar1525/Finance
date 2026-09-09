@@ -228,7 +228,7 @@ export const SchemeCatalog: React.FC<SchemeCatalogProps> = ({
                 {currentLang === 'hi' ? 'सूक्ष्म, लघु और मध्यम उद्यम मंत्रालय' : 'MINISTRY OF MICRO, SMALL & MEDIUM ENTERPRISES'}
               </span>
               <h2 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white font-serif">
-                {currentLang === 'hi' ? 'जनधन सेतु - राष्ट्रीय डिजिटल ऋण व सब्सिडी पोर्टल' : 'JanDhanSetu - National Digital Loan & Subsidy Portal'}
+                {currentLang === 'hi' ? 'जनधन योजना - राष्ट्रीय डिजिटल ऋण व सब्सिडी पोर्टल' : 'JanDhan Yojna - National Digital Loan & Subsidy Portal'}
               </h2>
             </div>
           </div>

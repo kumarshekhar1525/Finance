@@ -80,7 +80,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-base sm:text-xl tracking-tight text-slate-900 dark:text-white font-serif">
-                  JanDhan<span className="text-emerald-600 dark:text-emerald-400">Setu</span>
+                  JanDhan<span className="text-emerald-600 dark:text-emerald-400">Yojna</span>
                 </span>
                 <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                   <Lock className="w-2.5 h-2.5" /> 256-Bit Encrypted

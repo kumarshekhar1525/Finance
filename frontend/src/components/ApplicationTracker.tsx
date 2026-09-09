@@ -416,7 +416,7 @@ export const ApplicationTracker: React.FC<TrackerProps> = ({
                       </div>
                       <p className="text-xs font-mono text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
                         Subject: Official Government Loan Sanction Advice ({selectedApp.trackingId})<br/>
-                        "Dear {selectedApp.applicantName}, We are pleased to inform you that your application for {selectedApp.schemeName} has been processed with status '{selectedApp.status}'. Download your digital sanction letter directly from JanDhanSetu portal."
+                        "Dear {selectedApp.applicantName}, We are pleased to inform you that your application for {selectedApp.schemeName} has been processed with status '{selectedApp.status}'. Download your digital sanction letter directly from JanDhan Yojna portal."
                       </p>
                     </div>
                   </div>

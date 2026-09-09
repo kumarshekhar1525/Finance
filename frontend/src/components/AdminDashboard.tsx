@@ -358,7 +358,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       isOpen: true,
       app,
       type: 'sanction',
-      smsText: `Dear ${app.applicantName}, your Loan Application (${app.trackingId}) for ${app.schemeName} of ₹${app.requestedAmount.toLocaleString('en-IN')} has been APPROVED by Ministry of MSME. Download Sanction Letter from JanDhanSetu Portal.`,
+      smsText: `Dear ${app.applicantName}, your Loan Application (${app.trackingId}) for ${app.schemeName} of ₹${app.requestedAmount.toLocaleString('en-IN')} has been APPROVED by Ministry of MSME. Download Sanction Letter from JanDhan Yojna Portal.`,
       emailText: `Official Government Loan Sanction Advice (Ref: ${app.trackingId})\n\nDear ${app.applicantName},\nWe are pleased to inform you that your digital loan application has been vetted and SANCTIONED by the Nodal Credit Committee. Proceeds will be transferred via Direct Benefit Transfer (DBT) to your linked Aadhaar bank account.\n\nSanctioned Amount: ₹${app.requestedAmount.toLocaleString('en-IN')}\nInterest Rate: ${app.interestRate}% p.a.`,
     });
   };
@@ -385,7 +385,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       isOpen: true,
       app: appToReject,
       type: 'reject',
-      smsText: `Dear ${appToReject.applicantName}, your Loan Application (${appToReject.trackingId}) was REJECTED: ${reason}. Login to JanDhanSetu to re-upload documents.`,
+      smsText: `Dear ${appToReject.applicantName}, your Loan Application (${appToReject.trackingId}) was REJECTED: ${reason}. Login to JanDhan Yojna to re-upload documents.`,
       emailText: `Official Government Loan Notice (Ref: ${appToReject.trackingId})\n\nDear ${appToReject.applicantName},\nYour application could not be approved at this time due to: "${reason}". You may update your documents and re-apply on the portal.`,
     });
   };
