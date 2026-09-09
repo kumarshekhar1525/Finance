@@ -117,9 +117,208 @@ export default function App() {
     };
   });
 
+  const DEFAULT_APPLICATIONS: LoanApplication[] = [
+    {
+      id: 'app-demo-1',
+      trackingId: 'APP-2026-89421',
+      applicantAadhaar: '987654321098',
+      applicantPan: 'ABCDE1234F',
+      applicantName: 'Ramesh Kumar Verma',
+      applicantPhone: '+91 98765 43210',
+      applicantEmail: 'ramesh.verma@example.com',
+      applicantState: 'Uttar Pradesh',
+      applicantCategory: 'sc_st',
+      bankDetails: {
+        accountNo: '987654321098',
+        ifsc: 'SBIN0001234',
+        bankName: 'State Bank of India',
+      },
+      schemeId: 'pmegp-2026',
+      schemeName: 'Prime Minister Employment Generation Programme (PMEGP)',
+      category: 'sarkari_loan',
+      requestedAmount: 1750000,
+      tenureMonths: 84,
+      monthlyEmi: 27500,
+      interestRate: 8.5,
+      purpose: 'Setting up rural handloom & textile manufacturing unit',
+      appliedDate: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      status: 'submitted',
+      documents: [
+        {
+          id: 'doc-1-1',
+          type: 'aadhaar',
+          name: 'Aadhaar Card (UIDAI Verified)',
+          fileName: 'aadhaar_ramesh_verma.pdf',
+          fileSize: '1.2 MB',
+          uploadDate: new Date().toISOString(),
+          status: 'valid',
+        },
+        {
+          id: 'doc-1-2',
+          type: 'pan',
+          name: 'PAN Card (NSDL Verified)',
+          fileName: 'pan_ramesh_verma.jpg',
+          fileSize: '850 KB',
+          uploadDate: new Date().toISOString(),
+          status: 'valid',
+        },
+        {
+          id: 'doc-1-3',
+          type: 'caste_cert',
+          name: 'SC/ST Caste Certificate (35% Subsidy)',
+          fileName: 'caste_cert_sc.pdf',
+          fileSize: '1.4 MB',
+          uploadDate: new Date().toISOString(),
+          status: 'valid',
+        },
+        {
+          id: 'doc-1-4',
+          type: 'bank_statement',
+          name: 'Bank Statement (6 Months)',
+          fileName: 'bank_statement_sbi.pdf',
+          fileSize: '2.8 MB',
+          uploadDate: new Date().toISOString(),
+          status: 'valid',
+        },
+      ],
+      biometric: {
+        isVerified: true,
+        type: 'face',
+        faceMatchScore: 98.7,
+        token: 'BIO-FACE-SHA256-7E9A34B8C1',
+      },
+    },
+    {
+      id: 'app-demo-2',
+      trackingId: 'APP-2026-64192',
+      applicantAadhaar: '876543210987',
+      applicantPan: 'BKPVR9931K',
+      applicantName: 'Sunita Devi',
+      applicantPhone: '+91 98123 45678',
+      applicantEmail: 'sunita.devi@example.com',
+      applicantState: 'Bihar',
+      applicantCategory: 'women',
+      bankDetails: {
+        accountNo: '876543210987',
+        ifsc: 'PUNB0012300',
+        bankName: 'Punjab National Bank',
+      },
+      schemeId: 'pm-vishwakarma-2026',
+      schemeName: 'PM Vishwakarma Artisan Credit',
+      category: 'chota_loan',
+      requestedAmount: 200000,
+      tenureMonths: 30,
+      monthlyEmi: 7100,
+      interestRate: 5.0,
+      purpose: 'Modern tailoring & embroidery machinery expansion',
+      appliedDate: new Date(Date.now() - 3600000).toISOString(),
+      createdAt: new Date(Date.now() - 3600000).toISOString(),
+      status: 'under_review',
+      documents: [
+        {
+          id: 'doc-2-1',
+          type: 'aadhaar',
+          name: 'Aadhaar Card (UIDAI Verified)',
+          fileName: 'aadhaar_sunita_devi.pdf',
+          fileSize: '1.1 MB',
+          uploadDate: new Date().toISOString(),
+          status: 'valid',
+        },
+        {
+          id: 'doc-2-2',
+          type: 'pan',
+          name: 'PAN Card',
+          fileName: 'pan_sunita_devi.jpg',
+          fileSize: '790 KB',
+          uploadDate: new Date().toISOString(),
+          status: 'valid',
+        },
+        {
+          id: 'doc-2-3',
+          type: 'business_proof',
+          name: 'PM Vishwakarma Artisan Certificate',
+          fileName: 'artisan_cert.pdf',
+          fileSize: '950 KB',
+          uploadDate: new Date().toISOString(),
+          status: 'valid',
+        },
+      ],
+      biometric: {
+        isVerified: true,
+        type: 'face',
+        faceMatchScore: 99.2,
+        token: 'BIO-FACE-SHA256-8A1192',
+      },
+    },
+    {
+      id: 'app-demo-3',
+      trackingId: 'APP-2026-31057',
+      applicantAadhaar: '765432109876',
+      applicantPan: 'CPWPA4321M',
+      applicantName: 'Harish Chandra Patel',
+      applicantPhone: '+91 97234 56789',
+      applicantEmail: 'harish.patel@example.com',
+      applicantState: 'Uttar Pradesh',
+      applicantCategory: 'general',
+      bankDetails: {
+        accountNo: '765432109876',
+        ifsc: 'BARB0VARANA',
+        bankName: 'Bank of Baroda',
+      },
+      schemeId: 'kcc-2026',
+      schemeName: 'Kisan Credit Card (KCC 4% Interest)',
+      category: 'agriculture_loan',
+      requestedAmount: 300000,
+      tenureMonths: 12,
+      monthlyEmi: 25500,
+      interestRate: 4.0,
+      purpose: 'Subsidized crop production & drip irrigation setup',
+      appliedDate: new Date(Date.now() - 7200000).toISOString(),
+      createdAt: new Date(Date.now() - 7200000).toISOString(),
+      status: 'sanctioned',
+      documents: [
+        {
+          id: 'doc-3-1',
+          type: 'aadhaar',
+          name: 'Aadhaar Card',
+          fileName: 'aadhaar_harish_patel.pdf',
+          fileSize: '1.3 MB',
+          uploadDate: new Date().toISOString(),
+          status: 'valid',
+        },
+        {
+          id: 'doc-3-2',
+          type: 'income_proof',
+          name: 'Land Khatiyan / Khasra-Khatauni Record',
+          fileName: 'land_khasra_khatauni.pdf',
+          fileSize: '3.1 MB',
+          uploadDate: new Date().toISOString(),
+          status: 'valid',
+        },
+      ],
+      biometric: {
+        isVerified: true,
+        type: 'face',
+        faceMatchScore: 97.9,
+        token: 'BIO-FACE-SHA256-4B9910',
+      },
+    },
+  ];
+
   // State: Schemes & Applications
   const [schemes, setSchemes] = useState<Scheme[]>(SCHEMES_DATA);
-  const [applications, setApplications] = useState<LoanApplication[]>([]);
+  const [applications, setApplications] = useState<LoanApplication[]>(() => {
+    try {
+      const savedStr = localStorage.getItem('jandhan_applications_store');
+      if (savedStr) {
+        const parsed = JSON.parse(savedStr);
+        if (parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    localStorage.setItem('jandhan_applications_store', JSON.stringify(DEFAULT_APPLICATIONS));
+    return DEFAULT_APPLICATIONS;
+  });
   const [selectedSchemeForApply, setSelectedSchemeForApply] = useState<Scheme | null>(null);
   const [prefillCalcAmount, setPrefillCalcAmount] = useState<number | undefined>();
   const [prefillCalcTenure, setPrefillCalcTenure] = useState<number | undefined>();
@@ -216,6 +415,22 @@ export default function App() {
 
   // Search log dispatcher (communicates with backend to log and check moderation)
   const handleSearchLog = async (query: string, resultsCount: number) => {
+    if (query.trim()) {
+      try {
+        const newSearchLog = {
+          id: `search-log-${Date.now()}`,
+          query: query.trim(),
+          timestamp: new Date().toISOString(),
+          resultsCount,
+          isBlocked: false,
+          userIp: '106.210.45.12 (User Active Session)',
+        };
+        const existingStr = localStorage.getItem('jandhan_search_logs');
+        const existing = existingStr ? JSON.parse(existingStr) : [];
+        localStorage.setItem('jandhan_search_logs', JSON.stringify([newSearchLog, ...existing]));
+      } catch (e) {}
+    }
+
     try {
       const res = await fetch('/api/searches', {
         method: 'POST',
@@ -236,39 +451,61 @@ export default function App() {
     remarks?: string,
     rejectionReason?: string
   ) => {
+    setApplications((prev) => {
+      const updated = prev.map((a) =>
+        a.id === appId
+          ? {
+              ...a,
+              status,
+              rejectionReason: rejectionReason || a.rejectionReason,
+              statusTimeline: [
+                ...(a.statusTimeline || []),
+                { stage: status, timestamp: new Date().toISOString(), remarks: remarks || `Status changed to ${status}` },
+              ],
+            }
+          : a
+      );
+      try {
+        localStorage.setItem('jandhan_applications_store', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+
+    const newNotif: PushNotification = {
+      id: `notif-${Date.now()}`,
+      title: `Application Status: ${status.toUpperCase()}`,
+      message: rejectionReason
+        ? `Application update: Rejected - ${rejectionReason}`
+        : remarks || `Status changed to ${status}`,
+      timestamp: new Date().toISOString(),
+      read: false,
+      type: status === 'sanctioned' ? 'sanction' : status === 'rejected' ? 'reject' : 'system',
+      applicationId: appId,
+    };
+    setNotifications((prev) => [newNotif, ...prev]);
+
     try {
-      const res = await fetch(`/api/applications/${appId}/status`, {
+      await fetch(`/api/applications/${appId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status, remarks, rejectionReason }),
       });
-      const data = await res.json();
-      if (data.success && data.data) {
-        setApplications((prev) => prev.map((a) => (a.id === appId ? data.data : a)));
-
-        // Push notification
-        const newNotif: PushNotification = {
-          id: `notif-${Date.now()}`,
-          title: `Application Status: ${status.toUpperCase()}`,
-          message: rejectionReason
-            ? `Application update: Rejected - ${rejectionReason}`
-            : remarks || `Status changed to ${status}`,
-          timestamp: new Date().toISOString(),
-          read: false,
-          type: status === 'sanctioned' ? 'sanction' : status === 'rejected' ? 'reject' : 'system',
-          applicationId: appId,
-        };
-        setNotifications((prev) => [newNotif, ...prev]);
-      }
     } catch (err) {
-      console.error('Status update failed:', err);
+      console.warn('Backend API status patch unavailable, updated locally:', err);
     }
   };
 
   // On successful loan application submission
   const handleApplicationSubmitSuccess = (newApp: LoanApplication) => {
-    setApplications((prev) => [newApp, ...prev]);
+    setApplications((prev) => {
+      const updated = [newApp, ...prev];
+      try {
+        localStorage.setItem('jandhan_applications_store', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
     setSelectedSchemeForApply(null);
+    setActiveTab('applications');
     setActiveTab('applications');
 
     // Update active user profile and localStorage with applicant details

@@ -141,20 +141,48 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ currentLang }) => {
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
+      try {
+        const newLog = {
+          id: `chat-log-${Date.now()}`,
+          userQuestion: query,
+          botResponse: botReply,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          citizenName: 'Citizen User',
+        };
+        const savedStr = localStorage.getItem('jandhan_chat_logs');
+        const saved = savedStr ? JSON.parse(savedStr) : [];
+        localStorage.setItem('jandhan_chat_logs', JSON.stringify([newLog, ...saved]));
+      } catch (e) {}
+
       setMessages((prev) => [...prev, botMsg]);
     } catch (err) {
       console.warn('Chat API fetch issue, using trained local banking engine:', err);
       setIsLoading(false);
-      const fallbackReply = getLocalBankingResponse(query, currentLang);
+      const botReply = getLocalBankingResponse(query, currentLang);
+
+      const botMsg: Message = {
+        id: `msg-${Date.now() + 1}`,
+        sender: 'bot',
+        text: botReply,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+
+      try {
+        const newLog = {
+          id: `chat-log-${Date.now()}`,
+          userQuestion: query,
+          botResponse: botReply,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          citizenName: 'Citizen User',
+        };
+        const savedStr = localStorage.getItem('jandhan_chat_logs');
+        const saved = savedStr ? JSON.parse(savedStr) : [];
+        localStorage.setItem('jandhan_chat_logs', JSON.stringify([newLog, ...saved]));
+      } catch (e) {}
 
       setMessages((prev) => [
         ...prev,
-        {
-          id: `msg-${Date.now() + 1}`,
-          sender: 'bot',
-          text: fallbackReply,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
+        botMsg
       ]);
     }
   };
