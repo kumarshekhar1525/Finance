@@ -165,20 +165,20 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  // Dynamic Browser Tab Title Update (Finance Portal Title)
+  // Dynamic Browser Tab Title Update (Shekhar Finance Portal)
   useEffect(() => {
     if (isAdmin) {
-      document.title = 'Nodal Credit Governance Dashboard | JanDhan Finance';
+      document.title = 'Nodal Credit Governance Dashboard | Shekhar Finance';
     } else if (activeTab === 'applications') {
-      document.title = 'Loan Application Status & DBT Tracking | JanDhan Finance';
+      document.title = 'Loan Application Status & DBT Tracking | Shekhar Finance';
     } else if (activeTab === 'calculator') {
-      document.title = 'Smart EMI & Capital Subsidy Calculator | JanDhan Finance';
+      document.title = 'Smart EMI & Capital Subsidy Calculator | Shekhar Finance';
     } else if (activeTab === 'eligibility') {
-      document.title = 'AI Document & Credit Subsidy Eligibility Checker | JanDhan Finance';
+      document.title = 'AI Document & Credit Subsidy Eligibility Checker | Shekhar Finance';
     } else if (activeTab === 'admin') {
-      document.title = 'Nodal Credit Governance Dashboard | JanDhan Finance';
+      document.title = 'Nodal Credit Governance Dashboard | Shekhar Finance';
     } else {
-      document.title = 'JanDhan Finance | National Digital Banking & Credit Portal (जनधन फाइनेंस)';
+      document.title = 'Shekhar Finance | National Digital Banking & Credit Portal (shekharfinance.com)';
     }
   }, [activeTab, isAdmin]);
 
