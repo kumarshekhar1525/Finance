@@ -477,32 +477,79 @@ export const ApplicationTracker: React.FC<TrackerProps> = ({
                     <span>Real-time SMS dispatched to <strong>{selectedApp.applicantPhone || '+91 98765 43210'}</strong> and Email sent to <strong>{selectedApp.applicantEmail || 'applicant@gmail.com'}</strong>.</span>
                   </div>
 
-                  <div className="space-y-2">
-                    {/* Simulated / Actual Dispatch Items */}
-                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] font-extrabold uppercase">
-                          <Smartphone className="w-3 h-3" /> SMS Delivered (TRAI DLT)
-                        </span>
-                        <span className="text-[10px] font-mono text-slate-400">Ref: DLT-SMS-98721</span>
+                  {/* Invalid Document Warning Alert */}
+                  {selectedApp.documents.some(d => d.status === 'invalid') && (
+                    <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-300 dark:border-red-800 text-red-900 dark:text-red-200 text-xs space-y-1">
+                      <div className="flex items-center gap-2 font-bold text-red-700 dark:text-red-400">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>⚠️ ध्यान दें: अमान्य दस्तावेज़ (Invalid Document Detected)</span>
                       </div>
-                      <p className="text-xs font-mono text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
-                        "Dear {selectedApp.applicantName}, your Loan Application ({selectedApp.trackingId}) for {selectedApp.schemeName} of {formatINR(selectedApp.requestedAmount)} status updated to {selectedApp.status.toUpperCase()}. Ministry of MSME / JanDhan Portal."
+                      <p className="text-[11px] leading-relaxed">
+                        आपके द्वारा अपलोड किए गए दस्तावेज़ों में: <strong>{selectedApp.documents.filter(d => d.status === 'invalid').map(d => d.name).join(', ')}</strong> अमान्य (Invalid) पाया गया है। कृपया साफ़ दस्तावेज़ पुनः अपलोड करें।
                       </p>
                     </div>
+                  )}
 
-                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 text-[10px] font-extrabold uppercase">
-                          <Mail className="w-3 h-3" /> Email Dispatched
-                        </span>
-                        <span className="text-[10px] font-mono text-slate-400">Ref: MSG-EMAIL-55410</span>
-                      </div>
-                      <p className="text-xs font-mono text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
-                        Subject: Official Government Loan Sanction Advice ({selectedApp.trackingId})<br/>
-                        "Dear {selectedApp.applicantName}, We are pleased to inform you that your application for {selectedApp.schemeName} has been processed with status '{selectedApp.status}'. Download your digital sanction letter directly from JanDhanSetu portal."
-                      </p>
-                    </div>
+                  <div className="space-y-3">
+                    {/* Custom Admin Logs if available */}
+                    {selectedApp.dispatchLogs && selectedApp.dispatchLogs.length > 0 ? (
+                      selectedApp.dispatchLogs.map((log) => (
+                        <div key={log.id} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${
+                              log.type === 'sms' 
+                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' 
+                                : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                            }`}>
+                              {log.type === 'sms' ? <Smartphone className="w-3 h-3" /> : <Mail className="w-3 h-3" />}
+                              {log.type === 'sms' ? 'SMS Dispatched (TRAI DLT)' : 'Email Dispatched'}
+                            </span>
+                            <span className="text-[10px] font-mono text-slate-400">Ref: {log.operatorRef || 'DLT-MSG-98124'}</span>
+                          </div>
+                          <p className="text-xs font-mono text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 whitespace-pre-wrap">
+                            {log.content}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <>
+                        {/* Dynamic SMS Log based on Status */}
+                        <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] font-extrabold uppercase">
+                              <Smartphone className="w-3 h-3" /> SMS Delivered (TRAI DLT)
+                            </span>
+                            <span className="text-[10px] font-mono text-slate-400">Ref: DLT-SMS-98721</span>
+                          </div>
+                          <p className="text-xs font-mono text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+                            {selectedApp.status === 'sanctioned'
+                              ? `"Dear ${selectedApp.applicantName}, your Loan Application (${selectedApp.trackingId}) for ${selectedApp.schemeName} of ${formatINR(selectedApp.requestedAmount)} has been APPROVED & SANCTIONED by Ministry of MSME. Download Sanction Letter from JanDhanSetu Portal."`
+                              : selectedApp.status === 'rejected'
+                              ? `"Dear ${selectedApp.applicantName}, your Loan Application (${selectedApp.trackingId}) for ${selectedApp.schemeName} was REJECTED: ${selectedApp.rejectionReason || 'Document validation failed'}. Login to JanDhanSetu to re-upload."`
+                              : selectedApp.status === 'disbursed'
+                              ? `"Dear ${selectedApp.applicantName}, your Loan Application (${selectedApp.trackingId}) amount ${formatINR(selectedApp.requestedAmount)} has been DISBURSED via Direct Benefit Transfer (DBT) to your linked bank account."`
+                              : `"Dear ${selectedApp.applicantName}, your Loan Application (${selectedApp.trackingId}) for ${selectedApp.schemeName} of ${formatINR(selectedApp.requestedAmount)} status updated to ${selectedApp.status.toUpperCase()}. Ministry of MSME / JanDhan Portal."`}
+                          </p>
+                        </div>
+
+                        {/* Dynamic Email Log based on Status */}
+                        <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 text-[10px] font-extrabold uppercase">
+                              <Mail className="w-3 h-3" /> Email Dispatched
+                            </span>
+                            <span className="text-[10px] font-mono text-slate-400">Ref: MSG-EMAIL-55410</span>
+                          </div>
+                          <p className="text-xs font-mono text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+                            {selectedApp.status === 'sanctioned'
+                              ? `Subject: Official Government Loan Sanction Advice (${selectedApp.trackingId})\n"Dear ${selectedApp.applicantName}, We are pleased to inform you that your digital loan application has been vetted and SANCTIONED by the Nodal Credit Committee. Proceeds will be transferred via Direct Benefit Transfer (DBT) to your linked Aadhaar bank account.\nSanctioned Amount: ${formatINR(selectedApp.requestedAmount)}\nInterest Rate: ${selectedApp.interestRate || 8.5}% p.a."`
+                              : selectedApp.status === 'rejected'
+                              ? `Subject: Official Government Loan Rejection Notice (${selectedApp.trackingId})\n"Dear ${selectedApp.applicantName}, Your application could not be approved at this time due to: '${selectedApp.rejectionReason || 'Document validation failed'}'. You may update your documents and re-apply on the portal."`
+                              : `Subject: Official Government Loan Status Advice (${selectedApp.trackingId})\n"Dear ${selectedApp.applicantName}, We are pleased to inform you that your application for ${selectedApp.schemeName} has been processed with status '${selectedApp.status}'. Track your status on JanDhanSetu portal."`}
+                          </p>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               )}

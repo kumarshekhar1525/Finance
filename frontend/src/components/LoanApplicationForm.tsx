@@ -50,6 +50,9 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
   const [requestedAmount, setRequestedAmount] = useState<number>(prefillAmount || scheme.minAmount || 200000);
   const [tenureMonths, setTenureMonths] = useState<number>(prefillTenure || scheme.tenureMonths || 60);
   const [purpose, setPurpose] = useState<string>('');
+  const [loanTypePreference, setLoanTypePreference] = useState<string>(scheme.category || 'business_loan');
+  const [subsidyRequirement, setSubsidyRequirement] = useState<string>('35_percent_subsidy');
+  const [firmOrInstitutionName, setFirmOrInstitutionName] = useState<string>('');
   // Applicant details state
   const [applicantName, setApplicantName] = useState<string>(user?.fullName || '');
   const [applicantDob, setApplicantDob] = useState<string>(user?.dob || '1995-05-15');
@@ -418,8 +421,8 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
           interest_rate: scheme.interestRate,
           scheme_id: scheme.id,
           scheme_name: scheme.name,
-          loan_category: scheme.category,
-          specific_purpose: purpose || 'Business setup and working capital',
+          loan_category: loanTypePreference || scheme.category,
+          specific_purpose: `[${loanTypePreference.toUpperCase()}] ${firmOrInstitutionName ? 'Firm/College: ' + firmOrInstitutionName + ' | ' : ''}${purpose || 'Loan requirement for setup and expansion'} | Subsidy Requested: ${subsidyRequirement}`,
 
           applicant_name: applicantName,
           date_of_birth: applicantDob,
@@ -732,16 +735,65 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
               )}
             </div>
 
+            {/* Loan Type Preference & Subsidy Requirement */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                  Loan Requirement Type / लोन की श्रेणी *
+                </label>
+                <select
+                  value={loanTypePreference}
+                  onChange={(e) => setLoanTypePreference(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                >
+                  <option value="business_loan">💼 Business & Micro-Enterprise Loan (व्यापारिक ऋण)</option>
+                  <option value="study_loan">🎓 Education & Study Loan (शिक्षा / पढ़ाई ऋण)</option>
+                  <option value="artisan_loan">🔨 PM Vishwakarma Artisan Credit (विश्वकर्मा हस्तरशिल्प ऋण)</option>
+                  <option value="agriculture_loan">🌾 Kisan Credit Card & Farm Loan (कृषि एवं किसान ऋण)</option>
+                  <option value="home_loan">🏠 Housing & Property Loan (गृह निर्माण ऋण)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                  Govt. Subsidy Requirement / सब्सिडी आवश्यकता *
+                </label>
+                <select
+                  value={subsidyRequirement}
+                  onChange={(e) => setSubsidyRequirement(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                >
+                  <option value="35_percent_subsidy">🎁 35% SC/ST / Rural Government Grant (35% सब्सिडी छूट)</option>
+                  <option value="25_percent_subsidy">🎁 25% OBC / Women Category Grant (25% सब्सिडी छूट)</option>
+                  <option value="15_percent_subsidy">🎁 15% General Category Grant (15% सब्सिडी छूट)</option>
+                  <option value="no_subsidy">⚡ Direct Low-Interest Credit (कम ब्याज दर वाला डायरेक्ट ऋण)</option>
+                </select>
+              </div>
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-                Specific Purpose of Loan / ऋण का उद्देश्य
+                {loanTypePreference === 'study_loan' ? 'College / University / Course Name (कॉलेज / पढ़ाई का विवरण)' : 'Business Firm / Enterprise Name (फर्म / व्यापार का नाम)'}
+              </label>
+              <input
+                type="text"
+                value={firmOrInstitutionName}
+                onChange={(e) => setFirmOrInstitutionName(e.target.value)}
+                placeholder={loanTypePreference === 'study_loan' ? 'e.g. IIT BHU B.Tech Computer Science' : 'e.g. Shekhar Hardware & Enterprises'}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                Specific Purpose of Loan / ऋण का विस्तृत उद्देश्य
               </label>
               <textarea
                 id="loan-purpose-input"
                 rows={3}
                 value={purpose}
                 onChange={(e) => setPurpose(e.target.value)}
-                placeholder="e.g. Purchase of modern CNC equipment / setup of grocery mart / expanding tailoring boutique"
+                placeholder="e.g. Purchase of modern CNC equipment / college tuition fee & laptop purchase / expanding tailoring shop"
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
               />
             </div>
