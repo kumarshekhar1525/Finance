@@ -49,6 +49,7 @@ interface AdminDashboardProps {
   onRefresh: () => void;
   onAddNewScheme?: (newScheme: Scheme) => void;
   onDeleteScheme?: (schemeId: string) => void;
+  onDeleteApplication?: (appId: string) => void;
   onOpenAuthModal?: (mode: 'login' | 'signup' | 'forgot' | 'admin') => void;
 }
 
@@ -203,6 +204,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onRefresh,
   onAddNewScheme,
   onDeleteScheme,
+  onDeleteApplication,
   onOpenAuthModal,
 }) => {
   // Admin Passcode State
@@ -237,13 +239,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       id: `trash-app-${Date.now()}`,
       originalId: app.id,
       category: 'application',
-      title: `ऋण आवेदन: ${app.trackingId} (${app.applicantName})`,
+      title: `ऋण आवेदन: ${app.trackingId || app.id} (${app.applicantName})`,
       description: `योजना: ${app.schemeName} | राशि: ₹${app.requestedAmount.toLocaleString('en-IN')} | स्थिति: ${app.status}`,
       deletedAt: new Date().toISOString(),
       originalData: app,
     };
 
     saveRecycleBin([newItem, ...recycleBin]);
+    
+    if (onDeleteApplication) {
+      onDeleteApplication(app.id);
+      if (app.trackingId && app.trackingId !== app.id) {
+        onDeleteApplication(app.trackingId);
+      }
+    }
     
     try {
       const { supabase } = await import('../supabaseClient');
@@ -339,6 +348,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleRestoreItem = async (item: RecycleBinItem) => {
     if (item.category === 'application' && item.originalData) {
       try {
+        const saved = localStorage.getItem('jandhan_deleted_app_ids');
+        if (saved) {
+          const arr = JSON.parse(saved).filter((id: string) => id !== item.originalId && id !== item.originalData.id && id !== item.originalData.trackingId);
+          localStorage.setItem('jandhan_deleted_app_ids', JSON.stringify(arr));
+        }
+      } catch (e) {}
+
+      try {
         const { supabase } = await import('../supabaseClient');
         if (supabase) {
           await supabase.from('appointament1').insert([item.originalData]);
@@ -380,12 +397,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleBulkDeleteApps = async (idsToDelete: string[]) => {
     if (idsToDelete.length === 0) return;
 
-    const targetApps = applications.filter(a => idsToDelete.includes(a.id));
+    const targetApps = applications.filter(a => idsToDelete.includes(a.id) || idsToDelete.includes(a.trackingId));
     const newTrashItems: RecycleBinItem[] = targetApps.map(app => ({
       id: `trash-app-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       originalId: app.id,
       category: 'application',
-      title: `ऋण आवेदन: ${app.trackingId} (${app.applicantName})`,
+      title: `ऋण आवेदन: ${app.trackingId || app.id} (${app.applicantName})`,
       description: `योजना: ${app.schemeName} | राशि: ₹${app.requestedAmount.toLocaleString('en-IN')}`,
       deletedAt: new Date().toISOString(),
       originalData: app,
@@ -393,14 +410,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     saveRecycleBin([...newTrashItems, ...recycleBin]);
 
-    try {
-      const { supabase } = await import('../supabaseClient');
-      if (supabase) {
-        for (const id of idsToDelete) {
+    for (const id of idsToDelete) {
+      if (onDeleteApplication) onDeleteApplication(id);
+      try {
+        const { supabase } = await import('../supabaseClient');
+        if (supabase) {
           await supabase.from('appointament1').delete().eq('id', id);
         }
-      }
-    } catch (e) {}
+      } catch (e) {}
+    }
     setSelectedAppIds([]);
     onRefresh();
   };

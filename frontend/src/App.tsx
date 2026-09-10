@@ -465,11 +465,22 @@ export default function App() {
             };
           });
 
+          const deletedAppIds: string[] = (() => {
+            try {
+              const saved = localStorage.getItem('jandhan_deleted_app_ids');
+              return saved ? JSON.parse(saved) : [];
+            } catch (e) {
+              return [];
+            }
+          })();
+
           setApplications((prev) => {
-            const combined = [...mappedApps];
+            const combined = [...mappedApps].filter(a => !deletedAppIds.includes(a.id) && !deletedAppIds.includes(a.trackingId));
             prev.forEach((p) => {
-              if (!combined.some((c) => c.id === p.id || c.trackingId === p.trackingId)) {
-                combined.push(p);
+              if (!deletedAppIds.includes(p.id) && !deletedAppIds.includes(p.trackingId)) {
+                if (!combined.some((c) => c.id === p.id || c.trackingId === p.trackingId)) {
+                  combined.push(p);
+                }
               }
             });
             return combined;
@@ -691,10 +702,19 @@ export default function App() {
   };
 
   const handleDeleteApplication = async (appId: string) => {
-    // 1. Delete from applications state
+    // 1. Save to deleted list so fetchBackendData won't restore it
+    try {
+      const saved = localStorage.getItem('jandhan_deleted_app_ids');
+      const current: string[] = saved ? JSON.parse(saved) : [];
+      if (!current.includes(appId)) {
+        localStorage.setItem('jandhan_deleted_app_ids', JSON.stringify([...current, appId]));
+      }
+    } catch (e) {}
+
+    // 2. Delete from applications state
     setApplications((prev) => prev.filter((a) => a.id !== appId && a.trackingId !== appId));
 
-    // 2. Delete from localStorage store
+    // 3. Delete from localStorage store
     try {
       const savedStr = localStorage.getItem('jandhan_applications_store');
       if (savedStr) {
@@ -704,7 +724,7 @@ export default function App() {
       }
     } catch (e) {}
 
-    // 3. Delete from Supabase 'appointament1' table
+    // 4. Delete from Supabase 'appointament1' table
     if (supabase) {
       try {
         await supabase.from('appointament1').delete().eq('id', appId);
@@ -788,6 +808,7 @@ export default function App() {
             onRefresh={fetchBackendData}
             onAddNewScheme={handleAddNewScheme}
             onDeleteScheme={handleDeleteScheme}
+            onDeleteApplication={handleDeleteApplication}
             onOpenAuthModal={(m) => {
               setAuthModalMode(m);
               setIsAuthModalOpen(true);
