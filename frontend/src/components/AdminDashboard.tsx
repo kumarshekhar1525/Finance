@@ -373,6 +373,137 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     saveRecycleBin([]);
   };
 
+  // Multiselect Selection State
+  const [selectedAppIds, setSelectedAppIds] = useState<string[]>([]);
+  const [selectedCitizenIds, setSelectedCitizenIds] = useState<string[]>([]);
+  const [selectedSearchIds, setSelectedSearchIds] = useState<string[]>([]);
+  const [selectedTrashIds, setSelectedTrashIds] = useState<string[]>([]);
+
+  // Bulk Delete Applications
+  const handleBulkDeleteApps = async (idsToDelete: string[]) => {
+    if (idsToDelete.length === 0) return;
+    if (!window.confirm(`क्या आप वाकई चयनित ${idsToDelete.length} ऋण आवेदनों को रीसायकल बिन में भेजना चाहते हैं?`)) return;
+
+    const targetApps = applications.filter(a => idsToDelete.includes(a.id));
+    const newTrashItems: RecycleBinItem[] = targetApps.map(app => ({
+      id: `trash-app-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      originalId: app.id,
+      category: 'application',
+      title: `ऋण आवेदन: ${app.trackingId} (${app.applicantName})`,
+      description: `योजना: ${app.schemeName} | राशि: ₹${app.requestedAmount.toLocaleString('en-IN')}`,
+      deletedAt: new Date().toISOString(),
+      originalData: app,
+    }));
+
+    saveRecycleBin([...newTrashItems, ...recycleBin]);
+
+    try {
+      const { supabase } = await import('../supabaseClient');
+      if (supabase) {
+        for (const id of idsToDelete) {
+          await supabase.from('appointament1').delete().eq('id', id);
+        }
+      }
+    } catch (e) {}
+    setSelectedAppIds([]);
+    onRefresh();
+  };
+
+  // Bulk Delete Citizens
+  const handleBulkDeleteCitizens = (idsToDelete: string[]) => {
+    if (idsToDelete.length === 0) return;
+    if (!window.confirm(`क्या आप वाकई चयनित ${idsToDelete.length} नागरिकों की प्रोफ़ाइल को रीसायकल बिन में भेजना चाहते हैं?`)) return;
+
+    const targetCitizens = citizenList.filter(c => idsToDelete.includes(c.id));
+    const newTrashItems: RecycleBinItem[] = targetCitizens.map(cit => ({
+      id: `trash-citizen-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      originalId: cit.id,
+      category: 'citizen',
+      title: `नागरिक प्रोफ़ाइल: ${cit.name}`,
+      description: `आधार: ${cit.aadhaar} | वर्ग: ${cit.category} | राज्य: ${cit.state}`,
+      deletedAt: new Date().toISOString(),
+      originalData: cit,
+    }));
+
+    saveRecycleBin([...newTrashItems, ...recycleBin]);
+    setCitizenList(prev => prev.filter(c => !idsToDelete.includes(c.id)));
+    setSelectedCitizenIds([]);
+  };
+
+  // Bulk Delete Searches
+  const handleBulkDeleteSearches = (idsToDelete: string[]) => {
+    if (idsToDelete.length === 0) return;
+    if (!window.confirm(`क्या आप वाकई चयनित ${idsToDelete.length} सर्च लॉग्स को रीसायकल बिन में भेजना चाहते हैं?`)) return;
+
+    const targetSearches = searchLogs.filter(s => idsToDelete.includes(s.id));
+    const newTrashItems: RecycleBinItem[] = targetSearches.map(log => ({
+      id: `trash-search-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      originalId: log.id,
+      category: 'search_log',
+      title: `सर्च क्वेरी: "${log.query}"`,
+      description: `यूजर आईपी: ${log.userIp || 'N/A'} | परिणाम: ${log.resultsCount}`,
+      deletedAt: new Date().toISOString(),
+      originalData: log,
+    }));
+
+    saveRecycleBin([...newTrashItems, ...recycleBin]);
+    const updated = searchLogs.filter(s => !idsToDelete.includes(s.id));
+    setSearchLogs(updated);
+    try { localStorage.setItem('jandhan_search_logs', JSON.stringify(updated)); } catch (e) {}
+    setSelectedSearchIds([]);
+  };
+
+  // Bulk Restore from Trash
+  const handleBulkRestoreTrash = async (idsToRestore: string[]) => {
+    if (idsToRestore.length === 0) return;
+    const itemsToRestore = recycleBin.filter(r => idsToRestore.includes(r.id));
+    
+    for (const item of itemsToRestore) {
+      await handleRestoreItem(item);
+    }
+    setSelectedTrashIds([]);
+  };
+
+  // Restore ALL Items from Trash
+  const handleRestoreAllTrash = async () => {
+    if (recycleBin.length === 0) return;
+    if (!window.confirm(`क्या आप वाकई रीसायकल बिन के सभी (${recycleBin.length}) रिकॉर्ड्स रिस्टोर करना चाहते हैं?`)) return;
+
+    for (const item of recycleBin) {
+      if (item.category === 'application' && item.originalData) {
+        try {
+          const { supabase } = await import('../supabaseClient');
+          if (supabase) {
+            await supabase.from('appointament1').insert([item.originalData]);
+          }
+        } catch (e) {}
+      } else if (item.category === 'search_log') {
+        setSearchLogs(prev => [item.originalData, ...prev]);
+      } else if (item.category === 'helpdesk') {
+        setHelpdeskTickets(prev => [item.originalData, ...prev]);
+      } else if (item.category === 'chatbot') {
+        setChatLogs(prev => [item.originalData, ...prev]);
+      } else if (item.category === 'citizen') {
+        setCitizenList(prev => [item.originalData, ...prev]);
+      } else if (item.category === 'scheme' && onAddNewScheme) {
+        onAddNewScheme(item.originalData);
+      }
+    }
+
+    saveRecycleBin([]);
+    setSelectedTrashIds([]);
+    onRefresh();
+  };
+
+  // Bulk Permanent Delete from Trash
+  const handleBulkPermanentDeleteTrash = (idsToDelete: string[]) => {
+    if (idsToDelete.length === 0) return;
+    if (!window.confirm(`क्या आप वाकई चयनित ${idsToDelete.length} रिकॉर्ड्स को स्थायी रूप से हटाना चाहते हैं?`)) return;
+
+    saveRecycleBin(recycleBin.filter(r => !idsToDelete.includes(r.id)));
+    setSelectedTrashIds([]);
+  };
+
   const [searchLogs, setSearchLogs] = useState<SearchLog[]>([]);
   const [chatLogs, setChatLogs] = useState<ChatLogItem[]>([]);
   const [helpdeskTickets, setHelpdeskTickets] = useState<HelpdeskChatTicket[]>([]);
@@ -1195,8 +1326,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* Tab 1: Applications Queue */}
       {activeTab === 'applications' && (
         <div className="space-y-4">
-          {/* Filter Status Selector */}
-          <div className="flex items-center justify-between gap-4 flex-wrap">
+          {/* Filter Status & Bulk Action Controls */}
+          <div className="flex items-center justify-between gap-4 flex-wrap bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
             <div className="flex items-center gap-2">
               <span className="text-xs text-slate-500 font-bold">Status:</span>
               <select
@@ -1204,13 +1335,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-200"
               >
-                <option value="all">All Statuses</option>
+                <option value="all">All Statuses ({applications.length})</option>
                 <option value="submitted">Submitted</option>
                 <option value="under_review">Under Review</option>
                 <option value="sanctioned">Sanctioned</option>
                 <option value="rejected">Rejected</option>
                 <option value="disbursed">Disbursed</option>
               </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {selectedAppIds.length > 0 && (
+                <button
+                  onClick={() => handleBulkDeleteApps(selectedAppIds)}
+                  className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>चयनित हटाएं ({selectedAppIds.length} Delete Selected)</span>
+                </button>
+              )}
+
+              {filteredApps.length > 0 && (
+                <button
+                  onClick={() => handleBulkDeleteApps(filteredApps.map(a => a.id))}
+                  className="px-3.5 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 font-extrabold text-xs flex items-center gap-1 border border-red-200 dark:border-red-800 transition-all"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>सभी हटाएं (Delete All {filteredApps.length})</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -1220,6 +1373,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 uppercase tracking-wider font-mono border-b border-slate-200 dark:border-slate-800">
                   <tr>
+                    <th className="py-3 px-3 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={filteredApps.length > 0 && selectedAppIds.length === filteredApps.length}
+                        onChange={(e) => setSelectedAppIds(e.target.checked ? filteredApps.map(a => a.id) : [])}
+                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        title="Select All"
+                      />
+                    </th>
                     <th className="py-3 px-4">Tracking ID</th>
                     <th className="py-3 px-4">Applicant / Aadhaar</th>
                     <th className="py-3 px-4">Scheme & Category</th>
@@ -1232,6 +1394,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-sans">
                   {filteredApps.map((app) => (
                     <tr key={app.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                      <td className="py-3 px-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedAppIds.includes(app.id)}
+                          onChange={(e) => setSelectedAppIds(e.target.checked ? [...selectedAppIds, app.id] : selectedAppIds.filter(id => id !== app.id))}
+                          className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                      </td>
                       <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-white">
                         {app.trackingId}
                       </td>
@@ -1789,25 +1959,53 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {activeTab === 'citizens' && (
         <div className="space-y-6">
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-4">
               <div>
                 <h3 className="text-base font-extrabold text-slate-900 dark:text-white font-serif flex items-center gap-2">
                   <Users className="w-5 h-5 text-blue-600" />
-                  National Citizens Directory & Verified Test Profiles ({ALL_CITIZEN_PROFILES.length})
+                  National Citizens Directory & Verified Test Profiles ({citizenList.length})
                 </h3>
                 <p className="text-xs text-slate-500">
                   Full list of citizen profiles, categories, Aadhaar numbers, and document verification statuses.
                 </p>
               </div>
-              <span className="text-xs font-mono font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2.5 py-1 rounded-full border border-emerald-200">
-                Admin Verified View
-              </span>
+
+              <div className="flex items-center gap-2">
+                {selectedCitizenIds.length > 0 && (
+                  <button
+                    onClick={() => handleBulkDeleteCitizens(selectedCitizenIds)}
+                    className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>चयनित मिलाएं और हटाएं ({selectedCitizenIds.length})</span>
+                  </button>
+                )}
+
+                {citizenList.length > 0 && (
+                  <button
+                    onClick={() => handleBulkDeleteCitizens(citizenList.map(c => c.id))}
+                    className="px-3.5 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 font-extrabold text-xs flex items-center gap-1 border border-red-200 dark:border-red-800 transition-all"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>सभी नागरिक हटाएं (Delete All {citizenList.length})</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 dark:bg-slate-800 text-slate-400 uppercase tracking-wider font-mono">
                   <tr>
+                    <th className="py-3.5 px-3 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={citizenList.length > 0 && selectedCitizenIds.length === citizenList.length}
+                        onChange={(e) => setSelectedCitizenIds(e.target.checked ? citizenList.map(c => c.id) : [])}
+                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        title="Select All Citizens"
+                      />
+                    </th>
                     <th className="py-3.5 px-4">Citizen Name</th>
                     <th className="py-3.5 px-4">Aadhaar (UIDAI)</th>
                     <th className="py-3.5 px-4">Contact Info</th>
@@ -1818,8 +2016,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-sans">
-                  {ALL_CITIZEN_PROFILES.map((cit) => (
-                    <tr key={cit.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                  {citizenList.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center text-slate-400 font-bold">
+                        कोई नागरिक प्रोफ़ाइल नहीं बची है। (All citizen profiles deleted / moved to Recycle Bin)
+                      </td>
+                    </tr>
+                  ) : (
+                    citizenList.map((cit) => (
+                      <tr key={cit.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                        <td className="py-3.5 px-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedCitizenIds.includes(cit.id)}
+                            onChange={(e) => setSelectedCitizenIds(e.target.checked ? [...selectedCitizenIds, cit.id] : selectedCitizenIds.filter(id => id !== cit.id))}
+                            className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                          />
+                        </td>
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2.5">
                           <div className="w-8 h-8 rounded-full bg-slate-900 dark:bg-slate-800 text-amber-400 font-bold flex items-center justify-center text-xs shrink-0">
@@ -1854,8 +2067,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {cit.status} ({cit.docsCount} Docs)
                         </span>
                       </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <button
+                          onClick={() => handleDeleteCitizen(cit)}
+                          className="px-2.5 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 text-xs font-bold flex items-center gap-1 transition-all ml-auto"
+                          title="Delete Citizen Profile"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
+                        </button>
+                      </td>
                     </tr>
-                  ))}
+                  ))
+                )}
                 </tbody>
               </table>
             </div>
@@ -1993,15 +2217,52 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             {recycleBin.length > 0 && (
-              <button
-                onClick={handleEmptyRecycleBin}
-                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>रीसायकल बिन खाली करें ({recycleBin.length})</span>
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={handleRestoreAllTrash}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>सभी पुनर्स्थापित करें (Restore All {recycleBin.length})</span>
+                </button>
+
+                <button
+                  onClick={handleEmptyRecycleBin}
+                  className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>बिन पूरी तरह खाली करें (Empty Trash {recycleBin.length})</span>
+                </button>
+              </div>
             )}
           </div>
+
+          {/* Bulk Selection Bar if items are checked */}
+          {selectedTrashIds.length > 0 && (
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-4">
+              <span className="text-xs font-extrabold text-amber-600 dark:text-amber-400 font-mono">
+                ✓ {selectedTrashIds.length} आइटम्स सेलेक्टेड (Choose Options)
+              </span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleBulkRestoreTrash(selectedTrashIds)}
+                  className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>चयनित रिस्टोर करें (Restore Selected {selectedTrashIds.length})</span>
+                </button>
+
+                <button
+                  onClick={() => handleBulkPermanentDeleteTrash(selectedTrashIds)}
+                  className="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>चयनित स्थायी रूप से हटाएं (Delete Selected {selectedTrashIds.length})</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Filter Sub-Tabs */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2">
@@ -2045,9 +2306,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <div key={item.id} className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
-                          {item.category.toUpperCase().replace('_', ' ')}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedTrashIds.includes(item.id)}
+                            onChange={(e) => setSelectedTrashIds(e.target.checked ? [...selectedTrashIds, item.id] : selectedTrashIds.filter(id => id !== item.id))}
+                            className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
+                            {item.category.toUpperCase().replace('_', ' ')}
+                          </span>
+                        </div>
                         <span className="text-[10px] text-slate-400 font-mono">
                           {formatSafeDate(item.deletedAt)}
                         </span>
