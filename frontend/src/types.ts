@@ -104,6 +104,7 @@ export interface LoanApplication {
   applicantAadhaar: string;
   applicantPan?: string;
   applicantName: string;
+  applicantDob?: string;
   applicantPhone: string;
   applicantEmail: string;
   applicantState: string;

@@ -690,6 +690,30 @@ export default function App() {
     setNotifications((prev) => [schemeNotif, ...prev]);
   };
 
+  const handleDeleteApplication = async (appId: string) => {
+    // 1. Delete from applications state
+    setApplications((prev) => prev.filter((a) => a.id !== appId && a.trackingId !== appId));
+
+    // 2. Delete from localStorage store
+    try {
+      const savedStr = localStorage.getItem('jandhan_applications_store');
+      if (savedStr) {
+        const parsed = JSON.parse(savedStr);
+        const filtered = parsed.filter((a: any) => a.id !== appId && a.trackingId !== appId);
+        localStorage.setItem('jandhan_applications_store', JSON.stringify(filtered));
+      }
+    } catch (e) {}
+
+    // 3. Delete from Supabase 'appointament1' table
+    if (supabase) {
+      try {
+        await supabase.from('appointament1').delete().eq('id', appId);
+      } catch (e) {
+        console.warn('Supabase application delete error:', e);
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-150">
       {/* Navbar Header */}
@@ -782,6 +806,7 @@ export default function App() {
               setActiveTab(t);
               setIsAdmin(t === 'admin');
             }}
+            onDeleteApplication={handleDeleteApplication}
           />
         ) : activeTab === 'eligibility' ? (
           <DocumentEligibilityChecker

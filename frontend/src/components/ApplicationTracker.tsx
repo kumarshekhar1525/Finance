@@ -18,9 +18,9 @@ import {
   Mail,
   Smartphone,
   Send,
-  Bell
+  Trash2
 } from 'lucide-react';
-import { LoanApplication, ApplicationStatus } from '../types';
+import { LoanApplication, ApplicationStatus, UserProfile } from '../types';
 
 interface TrackerProps {
   applications: LoanApplication[];
@@ -28,6 +28,7 @@ interface TrackerProps {
   onOpenPayment: (app: LoanApplication) => void;
   onRefresh: () => void;
   onSelectTab?: (tab: 'schemes' | 'applications' | 'calculator' | 'eligibility' | 'admin') => void;
+  onDeleteApplication?: (appId: string) => void;
 }
 
 export const ApplicationTracker: React.FC<TrackerProps> = ({
@@ -36,31 +37,39 @@ export const ApplicationTracker: React.FC<TrackerProps> = ({
   onOpenPayment,
   onRefresh,
   onSelectTab,
+  onDeleteApplication,
 }) => {
   const [searchId, setSearchId] = useState('');
 
-  // User Data Privacy: Filter applications so logged-in users only see their own applications
-  const userApplications = applications.filter((app) => {
-    if (!user) return true; // Show default list if no profile active
-    const cleanUserAadhaar = user.aadhaarNumber?.replace(/\D/g, '') || '';
+  // User Data Privacy: Filter applications so logged-in users ONLY see their own applications
+  const displayApps = applications.filter((app) => {
+    // Search override if explicitly queried
+    if (searchId.trim() && (app.trackingId.toLowerCase() === searchId.trim().toLowerCase() || app.id.toLowerCase() === searchId.trim().toLowerCase())) {
+      return true;
+    }
+
+    const cleanUserAadhaar = user?.aadhaarNumber?.replace(/\D/g, '') || '';
     const cleanAppAadhaar = app.applicantAadhaar?.replace(/\D/g, '') || '';
-    const userEmail = user.email?.toLowerCase().trim();
-    const appEmail = app.applicantEmail?.toLowerCase().trim();
-    const userPhone = user.phone?.replace(/\D/g, '') || '';
+    const userEmail = user?.email?.toLowerCase().trim() || '';
+    const appEmail = app.applicantEmail?.toLowerCase().trim() || '';
+    const userPhone = user?.phone?.replace(/\D/g, '') || '';
     const appPhone = app.applicantPhone?.replace(/\D/g, '') || '';
-    const userName = user.fullName?.toLowerCase().trim();
-    const appName = app.applicantName?.toLowerCase().trim();
+    const userName = user?.fullName?.toLowerCase().trim() || '';
+    const appName = app.applicantName?.toLowerCase().trim() || '';
 
-    return (
-      (cleanUserAadhaar && cleanAppAadhaar && cleanUserAadhaar === cleanAppAadhaar) ||
-      (userEmail && appEmail && userEmail === appEmail) ||
-      (userPhone && appPhone && userPhone === appPhone) ||
-      (userName && appName && userName === appName)
-    );
+    // If user is logged in, strictly match their identity
+    if (user && (cleanUserAadhaar || userEmail || userPhone || userName)) {
+      return (
+        (cleanUserAadhaar && cleanAppAadhaar && cleanUserAadhaar === cleanAppAadhaar) ||
+        (userEmail && appEmail && userEmail === appEmail) ||
+        (userPhone && appPhone && userPhone === appPhone) ||
+        (userName && appName && userName === appName)
+      );
+    }
+
+    // Default: match active demo user (Shekhar / Ramesh) to prevent showing everyone's apps
+    return cleanAppAadhaar === '987654321098' || cleanAppPhone === '9876543210';
   });
-
-  // Fallback if user filter returns 0 applications but applications exist
-  const displayApps = userApplications.length > 0 ? userApplications : (searchId ? applications : []);
 
   const [selectedAppId, setSelectedAppId] = useState<string>(
     displayApps[0]?.trackingId || displayApps[0]?.id || ''
@@ -197,17 +206,32 @@ export const ApplicationTracker: React.FC<TrackerProps> = ({
                 <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">
                   {app.trackingId}
                 </span>
-                <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
-                    app.status === 'sanctioned' || app.status === 'disbursed'
-                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200'
-                      : app.status === 'rejected'
-                      ? 'bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-200'
-                      : 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200'
-                  }`}
-                >
-                  {app.status.replace('_', ' ')}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
+                      app.status === 'sanctioned' || app.status === 'disbursed'
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200'
+                        : app.status === 'rejected'
+                        ? 'bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-200'
+                        : 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200'
+                    }`}
+                  >
+                    {app.status.replace('_', ' ')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`क्या आप इस आवेदन (ID: ${app.trackingId}) को निश्चित रूप से हटाना चाहते हैं?`)) {
+                        if (onDeleteApplication) onDeleteApplication(app.id || app.trackingId);
+                      }
+                    }}
+                    className="p-1 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                    title="Delete Application (आवेदन रद्द/हटाएं)"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate max-w-[200px]">
                 {app.schemeName}
@@ -264,7 +288,7 @@ export const ApplicationTracker: React.FC<TrackerProps> = ({
                 </p>
               </div>
 
-              {/* Action Buttons: Sanction Letter & Payment */}
+              {/* Action Buttons: Sanction Letter, Payment & Delete */}
               <div className="flex items-center gap-2.5 flex-wrap">
                 {(selectedApp.status === 'sanctioned' || selectedApp.status === 'disbursed') && (
                   <button
@@ -287,6 +311,19 @@ export const ApplicationTracker: React.FC<TrackerProps> = ({
                     Pay Stamp Duty (₹500)
                   </button>
                 )}
+
+                <button
+                  onClick={() => {
+                    if (window.confirm(`क्या आप इस सक्रिय आवेदन (ID: ${selectedApp.trackingId}) को निश्चित रूप से हटाना चाहते हैं?`)) {
+                      if (onDeleteApplication) onDeleteApplication(selectedApp.id || selectedApp.trackingId);
+                    }
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-red-50 dark:bg-red-950/50 hover:bg-red-100 text-red-600 dark:text-red-400 text-xs font-bold border border-red-200 dark:border-red-800 flex items-center gap-1.5 transition-all"
+                  title="Delete Application"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>आवेदन हटाएं (Delete)</span>
+                </button>
               </div>
             </div>
 

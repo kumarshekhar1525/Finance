@@ -7,8 +7,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 async function testAppointament1Insert() {
   console.log('Testing insert into appointament1 table with nominee data & document photos...');
-  const serialNum = Math.floor(1001 + Math.random() * 8999);
-  const serialId = `0000${serialNum}-2026-4000-8000-00000000${serialNum}`;
+  const serialId = `SK9505${Math.floor(10 + Math.random() * 90)}`;
   const samplePhoto = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80';
 
   const { data, error } = await supabase
@@ -26,6 +25,7 @@ async function testAppointament1Insert() {
         specific_purpose: 'Business setup and working capital',
 
         applicant_name: 'Shekhar Kumar',
+        date_of_birth: '1995-05-15',
         aadhaar_number: '123456789012',
         phone: '9876543210',
         email: 'shekhar@example.com',

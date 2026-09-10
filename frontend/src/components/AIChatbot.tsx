@@ -400,6 +400,17 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ currentLang, user, applica
         </button>
       )}
 
+      {/* Click-Outside Backdrop */}
+      {isOpen && !isMinimized && (
+        <div
+          onClick={() => {
+            setIsOpen(false);
+            if (isSpeaking) window.speechSynthesis.cancel();
+          }}
+          className="fixed inset-0 z-40 bg-slate-950/20 backdrop-blur-[1px] transition-opacity cursor-pointer"
+        />
+      )}
+
       {/* Chat Window */}
       {isOpen && (
         <div

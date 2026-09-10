@@ -1,5 +1,5 @@
 -- =========================================================================
--- Supabase SQL Query to Create / Update 'appointament1' Table with Nominee Details
+-- Supabase SQL Query to Update 'appointament1' Table: Date of Birth & Nominee & Delete Policy
 -- Copy & Run this SQL in your Supabase SQL Editor:
 -- Dashboard Link: https://supabase.com/dashboard/project/dasrkwfegjqhkalawdfu/sql/new
 -- =========================================================================
@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS public.appointament1 (
     loan_category TEXT,
     specific_purpose TEXT,
     applicant_name TEXT,
+    date_of_birth TEXT,
     aadhaar_number TEXT,
     phone TEXT,
     email TEXT,
@@ -32,11 +33,12 @@ CREATE TABLE IF NOT EXISTS public.appointament1 (
     status TEXT DEFAULT 'Submitted'
 );
 
--- 2. Alter column types & add Nominee columns if table already existed
+-- 2. Alter column types & add Date of Birth + Nominee columns if table already existed
 ALTER TABLE IF EXISTS public.appointament1 
   ALTER COLUMN id TYPE TEXT USING id::text;
 
 ALTER TABLE IF EXISTS public.appointament1 
+  ADD COLUMN IF NOT EXISTS date_of_birth TEXT,
   ADD COLUMN IF NOT EXISTS photo_url TEXT,
   ADD COLUMN IF NOT EXISTS nominee_name TEXT,
   ADD COLUMN IF NOT EXISTS nominee_relation TEXT,
@@ -47,24 +49,25 @@ ALTER TABLE IF EXISTS public.appointament1
   ADD COLUMN IF NOT EXISTS biometric_record JSONB DEFAULT '{}'::jsonb,
   ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Submitted';
 
--- 3. Enable Row Level Security (RLS) & Grant Access
+-- 3. Enable Row Level Security (RLS) & Grant Access for SELECT, INSERT, UPDATE, DELETE
 ALTER TABLE IF EXISTS public.appointament1 ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Allow public insert on appointament1" ON public.appointament1;
 DROP POLICY IF EXISTS "Allow public select on appointament1" ON public.appointament1;
 DROP POLICY IF EXISTS "Allow public update on appointament1" ON public.appointament1;
+DROP POLICY IF EXISTS "Allow public delete on appointament1" ON public.appointament1;
 
 CREATE POLICY "Allow public insert on appointament1" 
-ON public.appointament1 FOR INSERT 
-WITH CHECK (true);
+ON public.appointament1 FOR INSERT WITH CHECK (true);
 
 CREATE POLICY "Allow public select on appointament1" 
-ON public.appointament1 FOR SELECT 
-USING (true);
+ON public.appointament1 FOR SELECT USING (true);
 
 CREATE POLICY "Allow public update on appointament1" 
-ON public.appointament1 FOR UPDATE 
-USING (true);
+ON public.appointament1 FOR UPDATE USING (true);
+
+CREATE POLICY "Allow public delete on appointament1" 
+ON public.appointament1 FOR DELETE USING (true);
 
 -- 4. Reload Schema Cache Notice
 NOTIFY pgrst, 'reload schema';

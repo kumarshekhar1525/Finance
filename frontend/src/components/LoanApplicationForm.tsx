@@ -52,6 +52,7 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
   const [purpose, setPurpose] = useState<string>('');
   // Applicant details state
   const [applicantName, setApplicantName] = useState<string>(user?.fullName || '');
+  const [applicantDob, setApplicantDob] = useState<string>(user?.dob || '1995-05-15');
   const [applicantAadhaar, setApplicantAadhaar] = useState<string>(user?.aadhaarNumber || '');
   const [applicantPhone, setApplicantPhone] = useState<string>(user?.phone || '');
   const [applicantEmail, setApplicantEmail] = useState<string>(user?.email || '');
@@ -314,9 +315,21 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
     try {
       let insertedData: any = null;
 
-      // Generate clean serial ID with serial number (e.g. 00001001-2026-4000-8000-000000001001)
-      const serialCount = Math.floor(1001 + Math.random() * 8999);
-      const cleanSerialId = `0000${serialCount}-2026-4000-8000-00000000${serialCount}`;
+      // Generate short 6 to 8 character ID using combination of Name initials & Date of Birth
+      const initials = (applicantName || 'SK')
+        .trim()
+        .split(/\s+/)
+        .map(w => w[0]?.toUpperCase() || '')
+        .join('')
+        .slice(0, 2) || 'SK';
+
+      const dobDigits = (applicantDob || user?.dob || '1995-05-15').replace(/\D/g, '');
+      const dobYearTwo = dobDigits.slice(2, 4) || '95';
+      const dobDayMonth = dobDigits.slice(4, 8) || '0515';
+      const randomSuffix = Math.floor(10 + Math.random() * 90).toString();
+
+      // Clean 8-character ID, e.g. "SK950515" or "SK958412" (6 to 8 characters)
+      const cleanSerialId = `${initials}${dobYearTwo}${dobDayMonth.slice(0, 4)}`.slice(0, 8);
 
       // Enhance documents with actual user photo & document images ("hu b hu photo")
       const userPhoto = user?.photoUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80';
@@ -360,6 +373,7 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
           specific_purpose: purpose || 'Business setup and working capital',
 
           applicant_name: applicantName,
+          date_of_birth: applicantDob,
           aadhaar_number: applicantAadhaar,
           phone: applicantPhone,
           email: applicantEmail,
@@ -705,6 +719,18 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
                     } text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden`}
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  Date of Birth (जन्म तिथि - ID जनरेशन हेतु) *
+                </label>
+                <input
+                  type="date"
+                  value={applicantDob}
+                  onChange={(e) => setApplicantDob(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
               </div>
 
               <div>
