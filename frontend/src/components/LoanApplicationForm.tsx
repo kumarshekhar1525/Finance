@@ -347,21 +347,23 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
     try {
       let insertedData: any = null;
 
-      // Generate short 6 to 8 character ID using combination of Name initials & Date of Birth
-      const initials = (applicantName || 'SK')
-        .trim()
-        .split(/\s+/)
-        .map(w => w[0]?.toUpperCase() || '')
-        .join('')
-        .slice(0, 2) || 'SK';
+      // Generate short 6 to 8 character UNIQUE ID combining Initials + DOB + 4-digit Random Suffix (e.g. SK958412)
+      const generateUniqueId = (): string => {
+        const initials = (applicantName || 'SK')
+          .trim()
+          .split(/\s+/)
+          .map(w => w[0]?.toUpperCase() || '')
+          .join('')
+          .slice(0, 2) || 'SK';
 
-      const dobDigits = (applicantDob || user?.dob || '1995-05-15').replace(/\D/g, '');
-      const dobYearTwo = dobDigits.slice(2, 4) || '95';
-      const dobDayMonth = dobDigits.slice(4, 8) || '0515';
-      const randomSuffix = Math.floor(10 + Math.random() * 90).toString();
+        const dobDigits = (applicantDob || user?.dob || '1995-05-15').replace(/\D/g, '');
+        const dobYearTwo = dobDigits.slice(2, 4) || '95';
+        const randSuffix = Math.floor(1000 + Math.random() * 9000).toString();
 
-      // Clean 8-character ID, e.g. "SK950515" or "SK958412" (6 to 8 characters)
-      const cleanSerialId = `${initials}${dobYearTwo}${dobDayMonth.slice(0, 4)}`.slice(0, 8);
+        return `${initials}${dobYearTwo}${randSuffix}`.slice(0, 8);
+      };
+
+      let cleanSerialId = generateUniqueId();
 
       // Keep each document's clean HTTP image link to keep payload light (<2KB) and avoid DB timeouts
       const firstUploadedPhoto = documents.find(d => d.previewUrl || (d as any).photo_url || (d as any).doc_photo)?.previewUrl;
@@ -462,6 +464,19 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
           .from('appointament1')
           .insert([fullPayload])
           .select();
+
+        // Handle duplicate key violation by auto-retry with a fresh unique ID
+        if (error && (error.code === '23505' || error.message?.includes('duplicate key') || error.message?.includes('unique constraint'))) {
+          console.warn('Supabase duplicate primary key detected, regenerating unique ID and retrying...');
+          cleanSerialId = generateUniqueId();
+          fullPayload.id = cleanSerialId;
+          const retryRes = await supabase
+            .from('appointament1')
+            .insert([fullPayload])
+            .select();
+          data = retryRes.data;
+          error = retryRes.error;
+        }
 
         if (error && (error.code === 'PGRST204' || error.message?.includes('column'))) {
           console.warn('Supabase missing nominee columns in schema cache, using fallback insert...');
