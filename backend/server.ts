@@ -283,6 +283,32 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// In-memory store for logins
+let loginsStore: any[] = [];
+
+// Record Login API (User & Admin Logins)
+app.post('/api/login', (req, res) => {
+  const { email, password, role, user_name } = req.body;
+  const loginRecord = {
+    id: `log-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    email: (email || 'user@example.com').toLowerCase().trim(),
+    password: password || '******',
+    role: role || 'user',
+    user_name: user_name || 'User',
+    login_time: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+  };
+
+  loginsStore.unshift(loginRecord);
+  console.log(`[LOGIN EVENT] Recorded ${loginRecord.role} login:`, loginRecord.email);
+  res.json({ success: true, message: 'Login recorded successfully', data: loginRecord });
+});
+
+// Get Logins API
+app.get('/api/login', (req, res) => {
+  res.json({ success: true, count: loginsStore.length, data: loginsStore });
+});
+
 // Schemes List
 app.get('/api/schemes', (req, res) => {
   const { category, beneficiary, state, search } = req.query;

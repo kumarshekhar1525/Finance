@@ -1384,8 +1384,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         ))}
                       </div>
 
-                      {/* Admin Reply Box */}
-                      <div className="p-3.5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                      {/* Admin Reply Box & Quick Answer Chips */}
+                      <div className="p-3.5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2.5">
+                        {/* Quick Resolution Answer Chips */}
+                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px]">
+                          <span className="font-bold text-slate-500 shrink-0 text-[10px]">त्वरित उत्तर:</span>
+                          <button
+                            type="button"
+                            onClick={() => setAdminReplyText('Aapka PMEGP loan file 35% subsidy ke sath pass ho gaya hai.')}
+                            className="px-2.5 py-1 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-900 dark:bg-emerald-950 dark:hover:bg-emerald-900 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-800 shrink-0 transition-colors"
+                          >
+                            ✅ PMEGP Loan Pass
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setAdminReplyText('Dokument verification complete ho gaya hai. Loan sanction order approved hai.')}
+                            className="px-2.5 py-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-900 dark:bg-blue-950 dark:hover:bg-blue-900 dark:text-blue-300 font-bold border border-blue-300 dark:border-blue-800 shrink-0 transition-colors"
+                          >
+                            ✅ Documents Verified
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setAdminReplyText('Subsidised grant amount direct DBT wallet/bank account me bhej di gayi hai.')}
+                            className="px-2.5 py-1 rounded-full bg-purple-100 hover:bg-purple-200 text-purple-900 dark:bg-purple-950 dark:hover:bg-purple-900 dark:text-purple-300 font-bold border border-purple-300 dark:border-purple-800 shrink-0 transition-colors"
+                          >
+                            ✅ DBT Subsidy Transferred
+                          </button>
+                        </div>
+
                         <form
                           onSubmit={(e) => {
                             e.preventDefault();
@@ -1399,7 +1425,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             type="text"
                             value={adminReplyText}
                             onChange={(e) => setAdminReplyText(e.target.value)}
-                            placeholder={`Write reply for ${activeTicket.citizenName} (e.g. Aapka PMEGP loan file pass ho gaya hai)...`}
+                            placeholder={`उत्तर/समाधान लिखें ${activeTicket.citizenName} के लिए (उदा. Aapka loan approve ho gaya hai)...`}
                             className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
                           />
                           <button
@@ -1408,7 +1434,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs shadow-md disabled:opacity-50 flex items-center gap-1.5"
                           >
                             <Send className="w-4 h-4" />
-                            <span>Send Reply (उत्तर भेजें)</span>
+                            <span>Send Answer (उत्तर भेजें)</span>
                           </button>
                         </form>
                       </div>
