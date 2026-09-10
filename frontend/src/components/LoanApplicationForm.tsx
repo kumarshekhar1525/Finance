@@ -346,64 +346,89 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
         nomineeAadhaar: nomineeAadhaar || '987654321098',
       };
 
-      // 1. Supabase table 'appointament1' me insert karein (tracking_id remove to prevent schema error)
+      // 1. Supabase table 'appointament1' me insert karein
       if (supabase) {
-        const { data, error } = await supabase
-          .from('appointament1')
-          .insert([
+        const fullPayload = {
+          id: cleanSerialId,
+          requested_amount: requestedAmount,
+          tenure_months: tenureMonths,
+          monthly_emi: calculatedEmi,
+          interest_rate: scheme.interestRate,
+          scheme_id: scheme.id,
+          scheme_name: scheme.name,
+          loan_category: scheme.category,
+          specific_purpose: purpose || 'Business setup and working capital',
+
+          applicant_name: applicantName,
+          aadhaar_number: applicantAadhaar,
+          phone: applicantPhone,
+          email: applicantEmail,
+          state: applicantState,
+          beneficiary_category: applicantCategory,
+          photo_url: userPhoto,
+
+          nominee_name: nomineeData.nomineeName,
+          nominee_relation: nomineeData.nomineeRelation,
+          nominee_phone: nomineeData.nomineePhone,
+          nominee_aadhaar: nomineeData.nomineeAadhaar,
+
+          documents: [
+            ...enrichedDocuments,
             {
-              id: cleanSerialId,
-              requested_amount: requestedAmount,
-              tenure_months: tenureMonths,
-              monthly_emi: calculatedEmi,
-              interest_rate: scheme.interestRate,
-              scheme_id: scheme.id,
-              scheme_name: scheme.name,
-              loan_category: scheme.category,
-              specific_purpose: purpose || 'Business setup and working capital',
+              id: 'doc-nominee-mandate',
+              type: 'important_doc' as const,
+              name: `Nominee: ${nomineeData.nomineeName} (${nomineeData.nomineeRelation})`,
+              fileName: 'nominee_mandate.pdf',
+              fileSize: '0.8 MB',
+              uploadDate: new Date().toISOString(),
+              status: 'valid' as const,
+              photo_url: userPhoto,
+              doc_photo: userPhoto,
+              document_image: userPhoto,
+              extractedData: nomineeData
+            },
+            ...(isMinor ? [{
+              id: 'doc-parent-details',
+              type: 'father_aadhaar' as const,
+              name: `Father: ${fatherName || 'Parent Verified'} & Mother: ${motherName || 'Parent Verified'}`,
+              fileName: 'parent_co_borrower_proof.pdf',
+              fileSize: '1.4 MB',
+              uploadDate: new Date().toISOString(),
+              status: 'valid' as const,
+              photo_url: userPhoto,
+              doc_photo: userPhoto,
+              document_image: userPhoto,
+              extractedData: { fatherName, fatherAadhaar, motherName, motherAadhaar }
+            }] : [])
+          ],
+          biometric_record: enrichedBiometric,
 
-              applicant_name: applicantName,
-              aadhaar_number: applicantAadhaar,
-              phone: applicantPhone,
-              email: applicantEmail,
-              state: applicantState,
-              beneficiary_category: applicantCategory,
+          status: 'Submitted'
+        };
 
-              documents: [
-                ...enrichedDocuments,
-                {
-                  id: 'doc-nominee-mandate',
-                  type: 'important_doc' as const,
-                  name: `Nominee: ${nomineeData.nomineeName} (${nomineeData.nomineeRelation})`,
-                  fileName: 'nominee_mandate.pdf',
-                  fileSize: '0.8 MB',
-                  uploadDate: new Date().toISOString(),
-                  status: 'valid' as const,
-                  photo_url: userPhoto,
-                  doc_photo: userPhoto,
-                  document_image: userPhoto,
-                  extractedData: nomineeData
-                },
-                ...(isMinor ? [{
-                  id: 'doc-parent-details',
-                  type: 'father_aadhaar' as const,
-                  name: `Father: ${fatherName || 'Parent Verified'} & Mother: ${motherName || 'Parent Verified'}`,
-                  fileName: 'parent_co_borrower_proof.pdf',
-                  fileSize: '1.4 MB',
-                  uploadDate: new Date().toISOString(),
-                  status: 'valid' as const,
-                  photo_url: userPhoto,
-                  doc_photo: userPhoto,
-                  document_image: userPhoto,
-                  extractedData: { fatherName, fatherAadhaar, motherName, motherAadhaar }
-                }] : [])
-              ],
-              biometric_record: enrichedBiometric,
-
-              status: 'Submitted'
-            }
-          ])
+        // Try inserting with nominee columns first
+        let { data, error } = await supabase
+          .from('appointament1')
+          .insert([fullPayload])
           .select();
+
+        if (error && (error.code === 'PGRST204' || error.message?.includes('column'))) {
+          console.warn('Supabase missing nominee columns in schema cache, using fallback insert...');
+          const fallbackPayload = { ...fullPayload };
+          delete (fallbackPayload as any).nominee_name;
+          delete (fallbackPayload as any).nominee_relation;
+          delete (fallbackPayload as any).nominee_phone;
+          delete (fallbackPayload as any).nominee_aadhaar;
+          delete (fallbackPayload as any).photo_url;
+
+          const res = await supabase
+            .from('appointament1')
+            .insert([fallbackPayload])
+            .select();
+          
+          data = res.data;
+          error = res.error;
+        }
 
         if (error) {
           setIsSubmitting(false);
@@ -427,6 +452,12 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
         applicantEmail,
         applicantState,
         applicantCategory,
+        nomineeDetails: {
+          name: nomineeData.nomineeName,
+          relation: nomineeData.nomineeRelation,
+          phone: nomineeData.nomineePhone,
+          aadhaar: nomineeData.nomineeAadhaar,
+        },
         schemeId: scheme.id,
         schemeName: scheme.name,
         category: scheme.category,
@@ -435,7 +466,20 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
         monthlyEmi: calculatedEmi,
         interestRate: scheme.interestRate,
         purpose: purpose || 'Business setup and working capital',
-        documents,
+        documents: [
+          ...enrichedDocuments,
+          {
+            id: 'doc-nominee-mandate',
+            type: 'important_doc' as const,
+            name: `Nominee: ${nomineeData.nomineeName} (${nomineeData.nomineeRelation})`,
+            fileName: 'nominee_mandate.pdf',
+            fileSize: '0.8 MB',
+            uploadDate: new Date().toISOString(),
+            status: 'valid' as const,
+            photo_url: userPhoto,
+            extractedData: nomineeData
+          }
+        ],
         biometric: biometricRecord || { isVerified: true, type: 'face' },
         status: 'submitted',
         appliedDate: new Date().toISOString()

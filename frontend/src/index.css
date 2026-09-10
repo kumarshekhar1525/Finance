@@ -65,6 +65,30 @@
     background-size: cover;
     background-position: center;
   }
+
+  /* Sky Blue & White Theme System */
+  .theme-white-skyblue {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f8fafc 100%);
+  }
+
+  .sky-hero-banner {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 40%, #0f172a 100%);
+  }
+
+  .sky-card-white {
+    background-color: #ffffff;
+    border: 1px solid #bae6fd;
+    box-shadow: 0 10px 25px -5px rgba(14, 165, 233, 0.1), 0 8px 10px -6px rgba(14, 165, 233, 0.05);
+  }
+
+  .sky-glow-btn {
+    background: linear-gradient(135deg, #0284c7 0%, #0284c7 100%);
+    box-shadow: 0 4px 14px 0 rgba(2, 132, 199, 0.35);
+  }
+  .sky-glow-btn:hover {
+    background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%);
+    box-shadow: 0 6px 20px 0 rgba(2, 132, 199, 0.45);
+  }
 }
 
 h1, h2, h3, .font-title {

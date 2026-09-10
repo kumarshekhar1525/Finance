@@ -31,6 +31,12 @@ async function testAppointament1Insert() {
         email: 'shekhar@example.com',
         state: 'Uttar Pradesh',
         beneficiary_category: 'general',
+        photo_url: samplePhoto,
+
+        nominee_name: 'Sunil Yadav',
+        nominee_relation: 'Father',
+        nominee_phone: '+91 98765 43210',
+        nominee_aadhaar: '987654321098',
 
         documents: [
           { 

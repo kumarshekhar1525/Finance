@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from './lib/supabase';
 import { 
   Navbar 
 } from './components/Navbar';
@@ -406,6 +407,77 @@ export default function App() {
       }
     } catch (err) {
       console.warn('Backend fetch note:', err);
+    }
+
+    // Load applications live from Supabase appointament1 table
+    if (supabase) {
+      try {
+        const { data: supaApps, error } = await supabase
+          .from('appointament1')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && supaApps && supaApps.length > 0) {
+          const mappedApps: LoanApplication[] = supaApps.map((row: any) => {
+            let nominee = undefined;
+            if (row.nominee_name) {
+              nominee = {
+                name: row.nominee_name,
+                relation: row.nominee_relation || 'Father',
+                phone: row.nominee_phone || row.phone,
+                aadhaar: row.nominee_aadhaar || '',
+              };
+            } else if (Array.isArray(row.documents)) {
+              const nomineeDoc = row.documents.find((d: any) => d.id === 'doc-nominee-mandate' || d.extractedData?.nomineeName);
+              if (nomineeDoc?.extractedData) {
+                nominee = {
+                  name: nomineeDoc.extractedData.nomineeName || 'Sunil Yadav',
+                  relation: nomineeDoc.extractedData.nomineeRelation || 'Father',
+                  phone: nomineeDoc.extractedData.nomineePhone || row.phone,
+                  aadhaar: nomineeDoc.extractedData.nomineeAadhaar || '',
+                };
+              }
+            }
+
+            return {
+              id: row.id || `APP-${Date.now()}`,
+              trackingId: row.id || `APP-${Date.now()}`,
+              applicantAadhaar: row.aadhaar_number || '987654321098',
+              applicantName: row.applicant_name || 'Shekhar Kumar',
+              applicantPhone: row.phone || '+91 98765 43210',
+              applicantEmail: row.email || 'user@example.com',
+              applicantState: row.state || 'Uttar Pradesh',
+              applicantCategory: row.beneficiary_category || 'general',
+              nomineeDetails: nominee,
+              schemeId: row.scheme_id || 'pmegp',
+              schemeName: row.scheme_name || 'PMEGP Loan Scheme',
+              category: row.loan_category || 'business_loan',
+              requestedAmount: Number(row.requested_amount) || 500000,
+              tenureMonths: Number(row.tenure_months) || 60,
+              monthlyEmi: Number(row.monthly_emi) || 9500,
+              interestRate: Number(row.interest_rate) || 8.5,
+              purpose: row.specific_purpose || 'Business setup and working capital',
+              documents: Array.isArray(row.documents) ? row.documents : [],
+              biometric: row.biometric_record || { isVerified: true, type: 'face' },
+              status: (row.status?.toLowerCase() || 'submitted') as ApplicationStatus,
+              appliedDate: row.created_at || new Date().toISOString(),
+              createdAt: row.created_at || new Date().toISOString(),
+            };
+          });
+
+          setApplications((prev) => {
+            const combined = [...mappedApps];
+            prev.forEach((p) => {
+              if (!combined.some((c) => c.id === p.id || c.trackingId === p.trackingId)) {
+                combined.push(p);
+              }
+            });
+            return combined;
+          });
+        }
+      } catch (sErr) {
+        console.warn('Supabase fetch error:', sErr);
+      }
     }
   };
 
