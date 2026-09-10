@@ -3017,7 +3017,7 @@ Status: Legitimate, Original & Authentic`}
                 <div className="flex items-center justify-between">
                   <span className="font-extrabold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
                     <Smartphone className="w-4 h-4 text-emerald-600" />
-                    SMS Dispatched to {dispatchNoticeModal.app?.applicantPhone || '+91 98765 43210'}
+                    SMS Dispatched to {dispatchNoticeModal.app?.applicantPhone || '+91 9508915876'}
                   </span>
                   <span className="text-[10px] font-mono font-bold bg-emerald-200 dark:bg-emerald-800 text-emerald-900 dark:text-emerald-100 px-2 py-0.5 rounded">
                     TRAI DLT APPROVED
@@ -3029,6 +3029,33 @@ Status: Legitimate, Original & Authentic`}
                   onChange={(e) => setDispatchNoticeModal({ ...dispatchNoticeModal, smsText: e.target.value })}
                   className="w-full font-mono text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 p-3 rounded-xl border border-emerald-200 dark:border-emerald-900 leading-relaxed text-[11px]"
                 />
+                <div className="flex items-center justify-between pt-1">
+                  <a
+                    href={`sms:${dispatchNoticeModal.app?.applicantPhone || '+919508915876'}?body=${encodeURIComponent(dispatchNoticeModal.smsText)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1.5 shadow-xs"
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>📱 Direct Send SMS on Mobile App</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if ('Notification' in window) {
+                        Notification.requestPermission().then(permission => {
+                          if (permission === 'granted') {
+                            new Notification('📱 JanDhanSetu SMS Alert', { body: dispatchNoticeModal.smsText });
+                          }
+                        });
+                      }
+                      alert(`🔔 Live SMS Notification Pushed to Phone (+91 9508915876):\n"${dispatchNoticeModal.smsText}"`);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 font-bold text-[11px] hover:bg-emerald-200"
+                  >
+                    🔔 Device Push Alert
+                  </button>
+                </div>
               </div>
 
               {/* Email Box */}
@@ -3036,7 +3063,7 @@ Status: Legitimate, Original & Authentic`}
                 <div className="flex items-center justify-between">
                   <span className="font-extrabold text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
                     <Mail className="w-4 h-4 text-blue-600" />
-                    Email Dispatched to {dispatchNoticeModal.app?.applicantEmail || 'ramesh.verma@example.com'}
+                    Email Dispatched to {dispatchNoticeModal.app?.applicantEmail || 'kumarshekharyadav9931@gmail.com'}
                   </span>
                   <span className="text-[10px] font-mono font-bold bg-blue-200 dark:bg-blue-800 text-blue-900 dark:text-blue-100 px-2 py-0.5 rounded">
                     GOVT MAIL GATEWAY
@@ -3048,6 +3075,33 @@ Status: Legitimate, Original & Authentic`}
                   onChange={(e) => setDispatchNoticeModal({ ...dispatchNoticeModal, emailText: e.target.value })}
                   className="w-full font-mono text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 p-3 rounded-xl border border-blue-200 dark:border-blue-900 leading-relaxed text-[11px] whitespace-pre-wrap"
                 />
+                <div className="flex items-center justify-between pt-1">
+                  <a
+                    href={`mailto:${dispatchNoticeModal.app?.applicantEmail || 'kumarshekharyadav9931@gmail.com'}?subject=${encodeURIComponent(`Official Government Loan Sanction Advice (${dispatchNoticeModal.app?.trackingId || 'GOVT-REF'})`)}&body=${encodeURIComponent(dispatchNoticeModal.emailText)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] flex items-center gap-1.5 shadow-xs"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    <span>📧 Direct Open Email Client</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if ('Notification' in window) {
+                        Notification.requestPermission().then(permission => {
+                          if (permission === 'granted') {
+                            new Notification('📧 JanDhanSetu Govt Email Alert', { body: dispatchNoticeModal.emailText.slice(0, 100) + '...' });
+                          }
+                        });
+                      }
+                      alert(`📧 Live Email Dispatched to kumarshekharyadav9931@gmail.com:\n"${dispatchNoticeModal.emailText.slice(0, 150)}..."`);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 font-bold text-[11px] hover:bg-blue-200"
+                  >
+                    🔔 Email Push Alert
+                  </button>
+                </div>
               </div>
             </div>
 

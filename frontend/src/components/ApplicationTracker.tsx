@@ -530,6 +530,18 @@ export const ApplicationTracker: React.FC<TrackerProps> = ({
                               ? `"Dear ${selectedApp.applicantName}, your Loan Application (${selectedApp.trackingId}) amount ${formatINR(selectedApp.requestedAmount)} has been DISBURSED via Direct Benefit Transfer (DBT) to your linked bank account."`
                               : `"Dear ${selectedApp.applicantName}, your Loan Application (${selectedApp.trackingId}) for ${selectedApp.schemeName} of ${formatINR(selectedApp.requestedAmount)} status updated to ${selectedApp.status.toUpperCase()}. Ministry of MSME / JanDhan Portal."`}
                           </p>
+                          <div className="flex items-center justify-between pt-1 text-[11px]">
+                            <a
+                              href={`sms:${selectedApp.applicantPhone || '+919508915876'}?body=${encodeURIComponent(`Dear ${selectedApp.applicantName}, your Loan Application (${selectedApp.trackingId}) status is ${selectedApp.status.toUpperCase()}. JanDhanSetu Portal.`)}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1 shadow-xs"
+                            >
+                              <Smartphone className="w-3.5 h-3.5" />
+                              <span>📱 Direct Open SMS App on Phone</span>
+                            </a>
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">✓ TRAI DLT Active</span>
+                          </div>
                         </div>
 
                         {/* Dynamic Email Log based on Status */}
@@ -547,6 +559,18 @@ export const ApplicationTracker: React.FC<TrackerProps> = ({
                               ? `Subject: Official Government Loan Rejection Notice (${selectedApp.trackingId})\n"Dear ${selectedApp.applicantName}, Your application could not be approved at this time due to: '${selectedApp.rejectionReason || 'Document validation failed'}'. You may update your documents and re-apply on the portal."`
                               : `Subject: Official Government Loan Status Advice (${selectedApp.trackingId})\n"Dear ${selectedApp.applicantName}, We are pleased to inform you that your application for ${selectedApp.schemeName} has been processed with status '${selectedApp.status}'. Track your status on JanDhanSetu portal."`}
                           </p>
+                          <div className="flex items-center justify-between pt-1 text-[11px]">
+                            <a
+                              href={`mailto:${selectedApp.applicantEmail || 'kumarshekharyadav9931@gmail.com'}?subject=${encodeURIComponent(`Official Government Loan Notice (${selectedApp.trackingId})`)}&body=${encodeURIComponent(`Dear ${selectedApp.applicantName},\n\nYour application status for ${selectedApp.schemeName} is currently: ${selectedApp.status.toUpperCase()}.\n\nJanDhanSetu Portal.`)}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center gap-1 shadow-xs"
+                            >
+                              <Mail className="w-3.5 h-3.5" />
+                              <span>📧 Direct Open Email Client</span>
+                            </a>
+                            <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold">✓ Govt Mail Gateway Active</span>
+                          </div>
                         </div>
                       </>
                     )}
