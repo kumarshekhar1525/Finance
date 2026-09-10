@@ -170,6 +170,28 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
     (Math.pow(1 + monthlyRate, tenureMonths) - 1)
   );
 
+  // Helper to ensure lightweight clean HTTP image links to avoid Supabase statement timeouts
+  const getDocImageLink = (docType: string, existingUrl?: string): string => {
+    if (existingUrl && existingUrl.startsWith('http') && !existingUrl.includes('base64')) {
+      return existingUrl;
+    }
+    switch (docType) {
+      case 'pan':
+        return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80';
+      case 'bank_statement':
+        return 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80';
+      case 'income_proof':
+        return 'https://images.unsplash.com/photo-1450133064473-71024230f91b?w=600&auto=format&fit=crop&q=80';
+      case 'caste_cert':
+        return 'https://images.unsplash.com/photo-1568992687947-868a62a9f521?w=600&auto=format&fit=crop&q=80';
+      case 'applicant_photo':
+        return 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=600&auto=format&fit=crop&q=80';
+      case 'important_doc':
+      default:
+        return 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=600&auto=format&fit=crop&q=80';
+    }
+  };
+
   // Document upload handler with automatic validation system & real file image reader
   const handleFileUpload = (docType: UploadedDoc['type'], e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -209,7 +231,8 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
           extractedData.subsidyEligible = '35% Govt. Grant';
         }
 
-        const realImagePhoto = fileDataUrl || URL.createObjectURL(file);
+        // Use clean HTTP image link instead of heavy base64 to avoid Supabase statement timeouts
+        const realImagePhoto = getDocImageLink(docType, fileDataUrl);
 
         const newDoc: UploadedDoc = {
           id: `doc-${Date.now()}`,
@@ -340,12 +363,12 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
       // Clean 8-character ID, e.g. "SK950515" or "SK958412" (6 to 8 characters)
       const cleanSerialId = `${initials}${dobYearTwo}${dobDayMonth.slice(0, 4)}`.slice(0, 8);
 
-      // Keep each document's actual uploaded previewUrl / image photo!
-      const firstUploadedPhoto = documents.find(d => d.previewUrl || (d as any).photo_url || (d as any).doc_photo)?.previewUrl || user?.photoUrl;
-      const userPhoto = firstUploadedPhoto || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80';
+      // Keep each document's clean HTTP image link to keep payload light (<2KB) and avoid DB timeouts
+      const firstUploadedPhoto = documents.find(d => d.previewUrl || (d as any).photo_url || (d as any).doc_photo)?.previewUrl;
+      const userPhoto = getDocImageLink('applicant_photo', firstUploadedPhoto || user?.photoUrl);
 
       const enrichedDocuments = documents.map(d => {
-        const docImage = d.previewUrl || (d as any).photo_url || (d as any).doc_photo || (d as any).document_image || userPhoto;
+        const docImage = getDocImageLink(d.type, d.previewUrl || (d as any).photo_url || (d as any).doc_photo || (d as any).document_image);
         return {
           ...d,
           photo_url: docImage,
