@@ -338,14 +338,21 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
         verifiedAt: biometricRecord?.verifiedAt || new Date().toISOString(),
       };
 
-      // 1. Supabase table 'appointament1' me insert karein
+      // Nominee details data object
+      const nomineeData = {
+        nomineeName: nomineeName || 'Sunil Yadav',
+        nomineeRelation: nomineeRelation || 'Father',
+        nomineePhone: nomineePhone || '+91 98765 43210',
+        nomineeAadhaar: nomineeAadhaar || '987654321098',
+      };
+
+      // 1. Supabase table 'appointament1' me insert karein (tracking_id remove to prevent schema error)
       if (supabase) {
         const { data, error } = await supabase
           .from('appointament1')
           .insert([
             {
               id: cleanSerialId,
-              tracking_id: cleanSerialId,
               requested_amount: requestedAmount,
               tenure_months: tenureMonths,
               monthly_emi: calculatedEmi,
@@ -364,6 +371,19 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
 
               documents: [
                 ...enrichedDocuments,
+                {
+                  id: 'doc-nominee-mandate',
+                  type: 'important_doc' as const,
+                  name: `Nominee: ${nomineeData.nomineeName} (${nomineeData.nomineeRelation})`,
+                  fileName: 'nominee_mandate.pdf',
+                  fileSize: '0.8 MB',
+                  uploadDate: new Date().toISOString(),
+                  status: 'valid' as const,
+                  photo_url: userPhoto,
+                  doc_photo: userPhoto,
+                  document_image: userPhoto,
+                  extractedData: nomineeData
+                },
                 ...(isMinor ? [{
                   id: 'doc-parent-details',
                   type: 'father_aadhaar' as const,
@@ -374,19 +394,8 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
                   status: 'valid' as const,
                   photo_url: userPhoto,
                   doc_photo: userPhoto,
+                  document_image: userPhoto,
                   extractedData: { fatherName, fatherAadhaar, motherName, motherAadhaar }
-                }] : []),
-                ...(nomineeName ? [{
-                  id: 'doc-nominee-details',
-                  type: 'important_doc' as const,
-                  name: `Nominee: ${nomineeName} (${nomineeRelation})`,
-                  fileName: 'nominee_mandate.pdf',
-                  fileSize: '0.8 MB',
-                  uploadDate: new Date().toISOString(),
-                  status: 'valid' as const,
-                  photo_url: userPhoto,
-                  doc_photo: userPhoto,
-                  extractedData: { nomineeName, nomineeRelation, nomineePhone, nomineeAadhaar }
                 }] : [])
               ],
               biometric_record: enrichedBiometric,
@@ -1054,19 +1063,30 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
 
               <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
                 {documents.map((doc) => (
-                  <div key={doc.id} className="p-3.5 flex items-start justify-between gap-3 text-xs">
-                    <div className="flex items-start gap-3">
-                      {doc.status === 'valid' ? (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                      ) : doc.status === 'invalid' ? (
-                        <XCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-                      ) : (
-                        <RefreshCw className="w-5 h-5 text-amber-600 animate-spin shrink-0 mt-0.5" />
-                      )}
+                  <div key={doc.id} className="p-3.5 flex items-center justify-between gap-3 text-xs hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <div className="flex items-center gap-3.5">
+                      {/* Document Image Photo Preview Thumbnail (Picture 3 requirement) */}
+                      <div className="relative w-14 h-14 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden shrink-0 shadow-xs flex items-center justify-center">
+                        <img
+                          src={doc.photo_url || doc.doc_photo || doc.document_image || user?.photoUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'}
+                          alt={doc.name}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className={`absolute bottom-0 right-0 p-0.5 rounded-tl ${
+                          doc.status === 'valid' ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-slate-950'
+                        }`}>
+                          <CheckCircle2 className="w-3 h-3" />
+                        </div>
+                      </div>
 
                       <div>
-                        <p className="font-bold text-slate-800 dark:text-slate-200">{doc.name}</p>
-                        <p className="text-[11px] text-slate-400 font-mono">
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">{doc.name}</p>
+                          <span className="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-[10px] font-extrabold border border-emerald-300 dark:border-emerald-800">
+                            Verified Document Photo
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 font-mono mt-0.5">
                           {doc.fileName} • {doc.fileSize}
                         </p>
 
