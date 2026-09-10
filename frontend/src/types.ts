@@ -105,6 +105,9 @@ export interface LoanApplication {
   applicantPan?: string;
   applicantName: string;
   applicantDob?: string;
+  applicantAge?: number;
+  date_of_birth?: string;
+  age?: number;
   applicantPhone: string;
   applicantEmail: string;
   applicantState: string;
@@ -272,4 +275,16 @@ export interface DocumentEligibilityResult {
   aiAnalysisSummaryHi: string;
   evaluationDate: string;
   certificateRefNumber: string;
+}
+
+export type RecycleCategory = 'application' | 'search_log' | 'helpdesk' | 'chatbot' | 'citizen' | 'scheme';
+
+export interface RecycleBinItem {
+  id: string;
+  originalId: string;
+  category: RecycleCategory;
+  title: string;
+  description: string;
+  deletedAt: string;
+  originalData: any;
 }

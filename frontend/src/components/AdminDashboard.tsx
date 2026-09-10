@@ -35,7 +35,7 @@ import {
   Headphones,
   FileText
 } from 'lucide-react';
-import { LoanApplication, SearchLog, ApplicationStatus, Scheme, HelpdeskChatTicket, HelpdeskChatMessage } from '../types';
+import { LoanApplication, SearchLog, ApplicationStatus, Scheme, HelpdeskChatTicket, HelpdeskChatMessage, RecycleBinItem, RecycleCategory } from '../types';
 
 interface AdminDashboardProps {
   applications: LoanApplication[];
@@ -213,7 +213,166 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [passcodeInput, setPasscodeInput] = useState('');
   const [passcodeError, setPasscodeError] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'applications' | 'searches' | 'helpdesk' | 'chat_logs' | 'citizens' | 'schemes'>('applications');
+  const [activeTab, setActiveTab] = useState<'applications' | 'searches' | 'helpdesk' | 'chat_logs' | 'citizens' | 'schemes' | 'recycle_bin'>('applications');
+  const [recycleBin, setRecycleBin] = useState<RecycleBinItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('jandhan_recycle_bin');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [];
+  });
+  const [citizenList, setCitizenList] = useState(() => ALL_CITIZEN_PROFILES);
+  const [recycleFilter, setRecycleFilter] = useState<string>('all');
+
+  const saveRecycleBin = (items: RecycleBinItem[]) => {
+    setRecycleBin(items);
+    try {
+      localStorage.setItem('jandhan_recycle_bin', JSON.stringify(items));
+    } catch (e) {}
+  };
+
+  // 1. Delete Application
+  const handleDeleteApplication = async (app: LoanApplication) => {
+    if (!window.confirm(`क्या आप वाकई इस ऋण आवेदन (${app.trackingId} - ${app.applicantName}) को रीसायकल बिन में भेजना चाहते हैं?`)) return;
+    
+    const newItem: RecycleBinItem = {
+      id: `trash-app-${Date.now()}`,
+      originalId: app.id,
+      category: 'application',
+      title: `ऋण आवेदन: ${app.trackingId} (${app.applicantName})`,
+      description: `योजना: ${app.schemeName} | राशि: ₹${app.requestedAmount.toLocaleString('en-IN')} | स्थिति: ${app.status}`,
+      deletedAt: new Date().toISOString(),
+      originalData: app,
+    };
+
+    saveRecycleBin([newItem, ...recycleBin]);
+    
+    try {
+      const { supabase } = await import('../supabaseClient');
+      if (supabase) {
+        await supabase.from('appointament1').delete().eq('id', app.id);
+      }
+    } catch (e) {}
+    onRefresh();
+  };
+
+  // 2. Delete Search Log
+  const handleDeleteSearchLog = (log: SearchLog) => {
+    const newItem: RecycleBinItem = {
+      id: `trash-search-${Date.now()}`,
+      originalId: log.id,
+      category: 'search_log',
+      title: `सर्च क्वेरी: "${log.query}"`,
+      description: `यूजर आईपी: ${log.userIp || 'N/A'} | परिणाम: ${log.resultsCount} योजनाएं`,
+      deletedAt: new Date().toISOString(),
+      originalData: log,
+    };
+    saveRecycleBin([newItem, ...recycleBin]);
+    const updated = searchLogs.filter(s => s.id !== log.id);
+    setSearchLogs(updated);
+    try { localStorage.setItem('jandhan_search_logs', JSON.stringify(updated)); } catch (e) {}
+  };
+
+  // 3. Delete Helpdesk Ticket
+  const handleDeleteHelpdeskTicket = (ticket: HelpdeskChatTicket) => {
+    const newItem: RecycleBinItem = {
+      id: `trash-ticket-${Date.now()}`,
+      originalId: ticket.ticketId,
+      category: 'helpdesk',
+      title: `हेल्पडेस्क टिकट: ${ticket.ticketId} (${ticket.citizenName})`,
+      description: `अंतिम संदेश: "${ticket.lastMessage}" | आधार: XXXX-XXXX-${ticket.citizenAadhaar.slice(-4)}`,
+      deletedAt: new Date().toISOString(),
+      originalData: ticket,
+    };
+    saveRecycleBin([newItem, ...recycleBin]);
+    const updated = helpdeskTickets.filter(t => t.ticketId !== ticket.ticketId);
+    setHelpdeskTickets(updated);
+    try { localStorage.setItem('jandhan_helpdesk_tickets', JSON.stringify(updated)); } catch (e) {}
+  };
+
+  // 4. Delete Chatbot Log
+  const handleDeleteChatLog = (chat: ChatLogItem) => {
+    const newItem: RecycleBinItem = {
+      id: `trash-chat-${Date.now()}`,
+      originalId: chat.id,
+      category: 'chatbot',
+      title: `AI चैट संवाद: ${chat.citizenName || 'नागरिक'}`,
+      description: `सवाल: "${chat.userQuestion || chat.message}"`,
+      deletedAt: new Date().toISOString(),
+      originalData: chat,
+    };
+    saveRecycleBin([newItem, ...recycleBin]);
+    const updated = chatLogs.filter(c => c.id !== chat.id);
+    setChatLogs(updated);
+    try { localStorage.setItem('jandhan_chat_logs', JSON.stringify(updated)); } catch (e) {}
+  };
+
+  // 5. Delete Citizen Profile
+  const handleDeleteCitizen = (citizen: typeof ALL_CITIZEN_PROFILES[0]) => {
+    const newItem: RecycleBinItem = {
+      id: `trash-citizen-${Date.now()}`,
+      originalId: citizen.id,
+      category: 'citizen',
+      title: `नागरिक प्रोफ़ाइल: ${citizen.name}`,
+      description: `आधार: ${citizen.aadhaar} | वर्ग: ${citizen.category} | राज्य: ${citizen.state}`,
+      deletedAt: new Date().toISOString(),
+      originalData: citizen,
+    };
+    saveRecycleBin([newItem, ...recycleBin]);
+    setCitizenList(prev => prev.filter(c => c.id !== citizen.id));
+  };
+
+  // 6. Delete Scheme
+  const handleDeleteSchemeItem = (scheme: Scheme) => {
+    if (onDeleteScheme) onDeleteScheme(scheme.id);
+    const newItem: RecycleBinItem = {
+      id: `trash-scheme-${Date.now()}`,
+      originalId: scheme.id,
+      category: 'scheme',
+      title: `सरकारी योजना: ${scheme.name}`,
+      description: `विभाग: ${scheme.department} | अधिकतम ऋण: ₹${scheme.maxAmount.toLocaleString('en-IN')}`,
+      deletedAt: new Date().toISOString(),
+      originalData: scheme,
+    };
+    saveRecycleBin([newItem, ...recycleBin]);
+  };
+
+  // Restore from Recycle Bin
+  const handleRestoreItem = async (item: RecycleBinItem) => {
+    if (item.category === 'application' && item.originalData) {
+      try {
+        const { supabase } = await import('../supabaseClient');
+        if (supabase) {
+          await supabase.from('appointament1').insert([item.originalData]);
+        }
+      } catch (e) {}
+      onRefresh();
+    } else if (item.category === 'search_log') {
+      setSearchLogs(prev => [item.originalData, ...prev]);
+    } else if (item.category === 'helpdesk') {
+      setHelpdeskTickets(prev => [item.originalData, ...prev]);
+    } else if (item.category === 'chatbot') {
+      setChatLogs(prev => [item.originalData, ...prev]);
+    } else if (item.category === 'citizen') {
+      setCitizenList(prev => [item.originalData, ...prev]);
+    } else if (item.category === 'scheme' && onAddNewScheme) {
+      onAddNewScheme(item.originalData);
+    }
+
+    saveRecycleBin(recycleBin.filter(r => r.id !== item.id));
+  };
+
+  // Permanent Delete from Recycle Bin
+  const handlePermanentDelete = (itemId: string) => {
+    saveRecycleBin(recycleBin.filter(r => r.id !== itemId));
+  };
+
+  // Empty Recycle Bin
+  const handleEmptyRecycleBin = () => {
+    if (!window.confirm('क्या आप वाकई रीसायकल बिन के सभी आइटम स्थायी रूप से हटाना चाहते हैं?')) return;
+    saveRecycleBin([]);
+  };
+
   const [searchLogs, setSearchLogs] = useState<SearchLog[]>([]);
   const [chatLogs, setChatLogs] = useState<ChatLogItem[]>([]);
   const [helpdeskTickets, setHelpdeskTickets] = useState<HelpdeskChatTicket[]>([]);
@@ -1018,6 +1177,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <Landmark className="w-4 h-4 text-amber-500" />
           Manage Schemes ({schemes.length})
         </button>
+
+        <button
+          id="admin-tab-recycle-bin"
+          onClick={() => setActiveTab('recycle_bin')}
+          className={`pb-2 px-3 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-all flex items-center gap-1.5 ${
+            activeTab === 'recycle_bin'
+              ? 'border-red-600 text-red-600 dark:text-red-400'
+              : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+          }`}
+        >
+          <Trash2 className="w-4 h-4 text-red-500" />
+          <span>रीसायकल बिन ({recycleBin.length})</span>
+        </button>
       </div>
 
       {/* Tab 1: Applications Queue */}
@@ -1101,12 +1273,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {app.status.replace('_', ' ')}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3 px-4 text-right flex items-center justify-end gap-2">
                         <button
                           onClick={() => setSelectedApp(app)}
                           className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-600 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors"
                         >
                           Review File
+                        </button>
+                        <button
+                          onClick={() => handleDeleteApplication(app)}
+                          className="px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 font-bold text-xs flex items-center gap-1 transition-colors"
+                          title="Delete application & move to Recycle Bin"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
                         </button>
                       </td>
                     </tr>
@@ -1182,6 +1362,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <th className="py-3 px-4">Timestamp</th>
                     <th className="py-3 px-4">Results Count</th>
                     <th className="py-3 px-4">Security Status</th>
+                    <th className="py-3 px-4 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-sans">
@@ -1246,6 +1427,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               Compliant
                             </span>
                           )}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            onClick={() => handleDeleteSearchLog(log)}
+                            className="px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 font-bold text-xs flex items-center gap-1 transition-colors ml-auto"
+                            title="Delete log"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Delete</span>
+                          </button>
                         </td>
                       </tr>
                     ))
@@ -1354,6 +1545,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors"
                           >
                             Review Customer File
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteHelpdeskTicket(activeTicket)}
+                            className="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 font-bold text-xs flex items-center gap-1 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Delete Ticket</span>
                           </button>
                         </div>
                       </div>
@@ -1526,44 +1725,55 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {formatSafeDate(item.timestamp)}
                         </td>
                         <td className="py-3.5 px-4 text-right">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const citName = item.citizenName || 'Shekhar Kumar Yadav';
-                              const citAadhaar = item.citizenAadhaar || '987654321098';
-                              const citPhone = item.citizenPhone || '+91 98765 43210';
-                              let ticket = helpdeskTickets.find(t => t.citizenAadhaar === citAadhaar || t.citizenName === citName);
-                              if (!ticket) {
-                                ticket = {
-                                  ticketId: `TICK-${Math.floor(10000 + Math.random() * 90000)}`,
-                                  citizenName: citName,
-                                  citizenPhone: citPhone,
-                                  citizenAadhaar: citAadhaar,
-                                  applicationId: 'APP-2026-89421',
-                                  lastMessage: item.message || item.userQuestion || 'Citizen AI query logged',
-                                  lastUpdated: new Date().toISOString(),
-                                  status: 'open',
-                                  messages: [
-                                    {
-                                      id: `hd-m-${Date.now()}`,
-                                      sender: 'user',
-                                      text: item.message || item.userQuestion || 'Citizen AI loan question',
-                                      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                                      citizenName: citName,
-                                      citizenAadhaar: citAadhaar,
-                                    }
-                                  ]
-                                };
-                                setHelpdeskTickets(prev => [ticket!, ...prev]);
-                              }
-                              setSelectedTicketId(ticket.ticketId);
-                              setActiveTab('helpdesk');
-                            }}
-                            className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-[11px] shadow-xs flex items-center gap-1 shrink-0 transition-all ml-auto"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                            <span>Reply (उत्तर दें)</span>
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteChatLog(item)}
+                              className="px-2.5 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 text-xs font-bold flex items-center gap-1 transition-all"
+                              title="Delete Chat Log"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Delete</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const citName = item.citizenName || 'Shekhar Kumar Yadav';
+                                const citAadhaar = item.citizenAadhaar || '987654321098';
+                                const citPhone = item.citizenPhone || '+91 98765 43210';
+                                let ticket = helpdeskTickets.find(t => t.citizenAadhaar === citAadhaar || t.citizenName === citName);
+                                if (!ticket) {
+                                  ticket = {
+                                    ticketId: `TICK-${Math.floor(10000 + Math.random() * 90000)}`,
+                                    citizenName: citName,
+                                    citizenPhone: citPhone,
+                                    citizenAadhaar: citAadhaar,
+                                    applicationId: 'APP-2026-89421',
+                                    lastMessage: item.message || item.userQuestion || 'Citizen AI query logged',
+                                    lastUpdated: new Date().toISOString(),
+                                    status: 'open',
+                                    messages: [
+                                      {
+                                        id: `hd-m-${Date.now()}`,
+                                        sender: 'user',
+                                        text: item.message || item.userQuestion || 'Citizen AI loan question',
+                                        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                                        citizenName: citName,
+                                        citizenAadhaar: citAadhaar,
+                                      }
+                                    ]
+                                  };
+                                  setHelpdeskTickets(prev => [ticket!, ...prev]);
+                                }
+                                setSelectedTicketId(ticket.ticketId);
+                                setActiveTab('helpdesk');
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-[11px] shadow-xs flex items-center gap-1 shrink-0 transition-all"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" />
+                              <span>Reply (उत्तर दें)</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -1604,6 +1814,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <th className="py-3.5 px-4">Category & Subsidy Match</th>
                     <th className="py-3.5 px-4">Monthly Income</th>
                     <th className="py-3.5 px-4">Verification Status</th>
+                    <th className="py-3.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-sans">
@@ -1750,11 +1961,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <td className="py-3.5 px-4 text-right">
                         <button
                           id={`delete-scheme-btn-${scheme.id}`}
-                          onClick={() => {
-                            if (window.confirm(`Are you sure you want to delete scheme "${scheme.name}"? This action cannot be undone.`)) {
-                              if (onDeleteScheme) onDeleteScheme(scheme.id);
-                            }
-                          }}
+                          onClick={() => handleDeleteSchemeItem(scheme)}
                           className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/60 dark:hover:bg-red-900 text-red-700 dark:text-red-300 text-xs font-extrabold flex items-center gap-1 border border-red-200 dark:border-red-800 transition-colors ml-auto"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1767,6 +1974,114 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Tab 7: Recycle Bin (रीसायकल बिन View) */}
+      {activeTab === 'recycle_bin' && (
+        <div className="space-y-6">
+          {/* Recycle Bin Top Header Banner */}
+          <div className="p-6 rounded-3xl bg-slate-900 text-white border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Trash2 className="w-6 h-6 text-red-400" />
+                <h2 className="text-xl font-extrabold font-serif">रीसायकल बिन (Recycle Trash Management)</h2>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                हटाए गए सभी ऋण आवेदन, सर्च लॉग्स, हेल्पडेस्क टिकट, AI चैट और नागरिक प्रोफ़ाइल यहाँ सुरक्षित हैं। आप इन्हें पुनः रिस्टोर कर सकते हैं या हमेशा के लिए मिटा सकते हैं।
+              </p>
+            </div>
+
+            {recycleBin.length > 0 && (
+              <button
+                onClick={handleEmptyRecycleBin}
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>रीसायकल बिन खाली करें ({recycleBin.length})</span>
+              </button>
+            )}
+          </div>
+
+          {/* Filter Sub-Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+            {[
+              { key: 'all', label: `सब कुछ (${recycleBin.length})` },
+              { key: 'application', label: `ऋण आवेदन (${recycleBin.filter(r => r.category === 'application').length})` },
+              { key: 'search_log', label: `सर्च लॉग्स (${recycleBin.filter(r => r.category === 'search_log').length})` },
+              { key: 'helpdesk', label: `हेल्पडेस्क (${recycleBin.filter(r => r.category === 'helpdesk').length})` },
+              { key: 'chatbot', label: `AI चैट (${recycleBin.filter(r => r.category === 'chatbot').length})` },
+              { key: 'citizen', label: `नागरिक (${recycleBin.filter(r => r.category === 'citizen').length})` },
+              { key: 'scheme', label: `योजनाएं (${recycleBin.filter(r => r.category === 'scheme').length})` },
+            ].map((sub) => (
+              <button
+                key={sub.key}
+                onClick={() => setRecycleFilter(sub.key)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                  recycleFilter === sub.key
+                    ? 'bg-red-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+                }`}
+              >
+                {sub.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Recycle Bin Items List */}
+          {recycleBin.length === 0 ? (
+            <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-3">
+              <Trash2 className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto" />
+              <h3 className="text-base font-bold text-slate-700 dark:text-slate-300">रीसायकल बिन खाली है!</h3>
+              <p className="text-xs text-slate-400 max-w-md mx-auto">
+                कोई भी हटाया गया रिकॉर्ड नहीं मिला। सभी आवेदन, चैट एवं सर्च लॉग एक्टिव हैं।
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {recycleBin
+                .filter(r => recycleFilter === 'all' || r.category === recycleFilter)
+                .map(item => (
+                  <div key={item.id} className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
+                          {item.category.toUpperCase().replace('_', ' ')}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          {formatSafeDate(item.deletedAt)}
+                        </span>
+                      </div>
+                      <h4 className="text-sm font-extrabold text-slate-900 dark:text-white leading-snug">
+                        {item.title}
+                      </h4>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                        {item.description}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                      <button
+                        onClick={() => handleRestoreItem(item)}
+                        className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>पुनर्स्थापित करें (Restore)</span>
+                      </button>
+
+                      <button
+                        onClick={() => handlePermanentDelete(item.id)}
+                        className="py-2 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 text-xs font-bold flex items-center gap-1 transition-all"
+                        title="Permanently Delete"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>स्थायी रूप से हटाएं</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
         </div>
       )}
 
