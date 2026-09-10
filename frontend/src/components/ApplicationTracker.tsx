@@ -222,9 +222,7 @@ export const ApplicationTracker: React.FC<TrackerProps> = ({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (window.confirm(`क्या आप इस आवेदन (ID: ${app.trackingId}) को निश्चित रूप से हटाना चाहते हैं?`)) {
-                        if (onDeleteApplication) onDeleteApplication(app.id || app.trackingId);
-                      }
+                      if (onDeleteApplication) onDeleteApplication(app.id || app.trackingId);
                     }}
                     className="p-1 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
                     title="Delete Application (आवेदन रद्द/हटाएं)"
@@ -314,9 +312,7 @@ export const ApplicationTracker: React.FC<TrackerProps> = ({
 
                 <button
                   onClick={() => {
-                    if (window.confirm(`क्या आप इस सक्रिय आवेदन (ID: ${selectedApp.trackingId}) को निश्चित रूप से हटाना चाहते हैं?`)) {
-                      if (onDeleteApplication) onDeleteApplication(selectedApp.id || selectedApp.trackingId);
-                    }
+                    if (onDeleteApplication) onDeleteApplication(selectedApp.id || selectedApp.trackingId);
                   }}
                   className="px-3.5 py-2 rounded-xl bg-red-50 dark:bg-red-950/50 hover:bg-red-100 text-red-600 dark:text-red-400 text-xs font-bold border border-red-200 dark:border-red-800 flex items-center gap-1.5 transition-all"
                   title="Delete Application"

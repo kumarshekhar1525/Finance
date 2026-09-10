@@ -233,8 +233,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // 1. Delete Application
   const handleDeleteApplication = async (app: LoanApplication) => {
-    if (!window.confirm(`क्या आप वाकई इस ऋण आवेदन (${app.trackingId} - ${app.applicantName}) को रीसायकल बिन में भेजना चाहते हैं?`)) return;
-    
     const newItem: RecycleBinItem = {
       id: `trash-app-${Date.now()}`,
       originalId: app.id,
@@ -369,7 +367,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // Empty Recycle Bin
   const handleEmptyRecycleBin = () => {
-    if (!window.confirm('क्या आप वाकई रीसायकल बिन के सभी आइटम स्थायी रूप से हटाना चाहते हैं?')) return;
     saveRecycleBin([]);
   };
 
@@ -382,7 +379,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Bulk Delete Applications
   const handleBulkDeleteApps = async (idsToDelete: string[]) => {
     if (idsToDelete.length === 0) return;
-    if (!window.confirm(`क्या आप वाकई चयनित ${idsToDelete.length} ऋण आवेदनों को रीसायकल बिन में भेजना चाहते हैं?`)) return;
 
     const targetApps = applications.filter(a => idsToDelete.includes(a.id));
     const newTrashItems: RecycleBinItem[] = targetApps.map(app => ({
@@ -412,7 +408,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Bulk Delete Citizens
   const handleBulkDeleteCitizens = (idsToDelete: string[]) => {
     if (idsToDelete.length === 0) return;
-    if (!window.confirm(`क्या आप वाकई चयनित ${idsToDelete.length} नागरिकों की प्रोफ़ाइल को रीसायकल बिन में भेजना चाहते हैं?`)) return;
 
     const targetCitizens = citizenList.filter(c => idsToDelete.includes(c.id));
     const newTrashItems: RecycleBinItem[] = targetCitizens.map(cit => ({
@@ -433,7 +428,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Bulk Delete Searches
   const handleBulkDeleteSearches = (idsToDelete: string[]) => {
     if (idsToDelete.length === 0) return;
-    if (!window.confirm(`क्या आप वाकई चयनित ${idsToDelete.length} सर्च लॉग्स को रीसायकल बिन में भेजना चाहते हैं?`)) return;
 
     const targetSearches = searchLogs.filter(s => idsToDelete.includes(s.id));
     const newTrashItems: RecycleBinItem[] = targetSearches.map(log => ({
@@ -467,7 +461,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Restore ALL Items from Trash
   const handleRestoreAllTrash = async () => {
     if (recycleBin.length === 0) return;
-    if (!window.confirm(`क्या आप वाकई रीसायकल बिन के सभी (${recycleBin.length}) रिकॉर्ड्स रिस्टोर करना चाहते हैं?`)) return;
 
     for (const item of recycleBin) {
       if (item.category === 'application' && item.originalData) {
@@ -498,7 +491,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Bulk Permanent Delete from Trash
   const handleBulkPermanentDeleteTrash = (idsToDelete: string[]) => {
     if (idsToDelete.length === 0) return;
-    if (!window.confirm(`क्या आप वाकई चयनित ${idsToDelete.length} रिकॉर्ड्स को स्थायी रूप से हटाना चाहते हैं?`)) return;
 
     saveRecycleBin(recycleBin.filter(r => !idsToDelete.includes(r.id)));
     setSelectedTrashIds([]);
