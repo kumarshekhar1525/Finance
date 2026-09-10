@@ -170,7 +170,7 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
     (Math.pow(1 + monthlyRate, tenureMonths) - 1)
   );
 
-  // Document upload handler with automatic validation system
+  // Document upload handler with automatic validation system & real file image reader
   const handleFileUpload = (docType: UploadedDoc['type'], e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -178,59 +178,68 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
     setIsVerifyingDoc(true);
     setFormError('');
 
-    // Simulated automated document validation rules
-    setTimeout(() => {
-      setIsVerifyingDoc(false);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const fileDataUrl = event.target?.result as string;
 
-      const isTooLarge = file.size > 8 * 1024 * 1024;
-      const isBadName = file.name.toLowerCase().includes('blur') || file.name.toLowerCase().includes('corrupt');
+      setTimeout(() => {
+        setIsVerifyingDoc(false);
 
-      let status: 'valid' | 'invalid' = 'valid';
-      let rejectionReason: string | undefined;
-      const extractedData: Record<string, string> = {};
+        const isTooLarge = file.size > 15 * 1024 * 1024;
+        const isBadName = file.name.toLowerCase().includes('blur') || file.name.toLowerCase().includes('corrupt');
 
-      if (isTooLarge) {
-        status = 'invalid';
-        rejectionReason = 'फ़ाइल का आकार बहुत बड़ा है (File size exceeds 8MB limit. Please compress)';
-      } else if (isBadName) {
-        status = 'invalid';
-        rejectionReason = 'धुंधली छवि पाई गई (Blurry image detected: OCR text unreadable. Please upload clear scan)';
-      } else if (docType === 'pan') {
-        extractedData.pan = 'ABCDE' + Math.floor(1000 + Math.random() * 9000) + 'K';
-        extractedData.verifiedWithITD = 'YES';
-      } else if (docType === 'bank_statement') {
-        extractedData.statementMonths = 'Last 6 Months (Verified)';
-        extractedData.averageMonthlyCredits = '₹65,000';
-      } else if (docType === 'caste_cert') {
-        extractedData.casteCategory = 'SC / ST Validated';
-        extractedData.subsidyEligible = '35% Govt. Grant';
-      }
+        let status: 'valid' | 'invalid' = 'valid';
+        let rejectionReason: string | undefined;
+        const extractedData: Record<string, string> = {};
 
-      const newDoc: UploadedDoc = {
-        id: `doc-${Date.now()}`,
-        type: docType,
-        name:
-          docType === 'pan'
-            ? 'PAN Card'
-            : docType === 'bank_statement'
-              ? 'Bank Statement (6 Months)'
-              : docType === 'income_proof'
-                ? 'Income Certificate / ITR'
-                : docType === 'applicant_photo'
-                  ? 'Applicant Passport Photo'
-                  : docType === 'caste_cert'
-                    ? 'SC/ST Caste Certificate'
-                    : 'Supporting Document',
-        fileName: file.name,
-        fileSize: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
-        uploadDate: new Date().toISOString(),
-        status,
-        rejectionReason,
-        extractedData,
-      };
+        if (isTooLarge) {
+          status = 'invalid';
+          rejectionReason = 'फ़ाइल का आकार बहुत बड़ा है (File size exceeds 15MB limit. Please compress)';
+        } else if (isBadName) {
+          status = 'invalid';
+          rejectionReason = 'धुंधली छवि पाई गई (Blurry image detected: OCR text unreadable. Please upload clear scan)';
+        } else if (docType === 'pan') {
+          extractedData.pan = 'ABCDE' + Math.floor(1000 + Math.random() * 9000) + 'K';
+          extractedData.verifiedWithITD = 'YES';
+        } else if (docType === 'bank_statement') {
+          extractedData.statementMonths = 'Last 6 Months (Verified)';
+          extractedData.averageMonthlyCredits = '₹65,000';
+        } else if (docType === 'caste_cert') {
+          extractedData.casteCategory = 'SC / ST Validated';
+          extractedData.subsidyEligible = '35% Govt. Grant';
+        }
 
-      setDocuments((prev) => [...prev.filter((d) => d.type !== docType), newDoc]);
-    }, 800);
+        const realImagePhoto = fileDataUrl || URL.createObjectURL(file);
+
+        const newDoc: UploadedDoc = {
+          id: `doc-${Date.now()}`,
+          type: docType,
+          name:
+            docType === 'pan'
+              ? 'PAN Card'
+              : docType === 'bank_statement'
+                ? 'Bank Statement (6 Months)'
+                : docType === 'income_proof'
+                  ? 'Income Certificate / ITR'
+                  : docType === 'applicant_photo'
+                    ? 'Applicant Passport Photo'
+                    : docType === 'caste_cert'
+                      ? 'SC/ST Caste Certificate'
+                      : 'Supporting Document',
+          fileName: file.name,
+          fileSize: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+          uploadDate: new Date().toISOString(),
+          status,
+          rejectionReason,
+          previewUrl: realImagePhoto,
+          extractedData,
+        };
+
+        setDocuments((prev) => [...prev.filter((d) => d.type !== docType), newDoc]);
+      }, 600);
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const removeDoc = (docId: string) => {
@@ -331,15 +340,20 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
       // Clean 8-character ID, e.g. "SK950515" or "SK958412" (6 to 8 characters)
       const cleanSerialId = `${initials}${dobYearTwo}${dobDayMonth.slice(0, 4)}`.slice(0, 8);
 
-      // Enhance documents with actual user photo & document images ("hu b hu photo")
-      const userPhoto = user?.photoUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80';
+      // Keep each document's actual uploaded previewUrl / image photo!
+      const firstUploadedPhoto = documents.find(d => d.previewUrl || (d as any).photo_url || (d as any).doc_photo)?.previewUrl || user?.photoUrl;
+      const userPhoto = firstUploadedPhoto || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80';
 
-      const enrichedDocuments = documents.map(d => ({
-        ...d,
-        photo_url: userPhoto,
-        doc_photo: userPhoto,
-        document_image: userPhoto,
-      }));
+      const enrichedDocuments = documents.map(d => {
+        const docImage = d.previewUrl || (d as any).photo_url || (d as any).doc_photo || (d as any).document_image || userPhoto;
+        return {
+          ...d,
+          photo_url: docImage,
+          doc_photo: docImage,
+          document_image: docImage,
+          previewUrl: docImage,
+        };
+      });
 
       // Enhance biometric_record with actual face photo
       const enrichedBiometric = {

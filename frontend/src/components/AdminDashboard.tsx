@@ -2053,6 +2053,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
+              {/* Real Original Uploaded Document Photo Preview */}
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-900/90 max-h-64 flex items-center justify-center p-2">
+                <img
+                  src={
+                    inspectDocModal.doc.previewUrl ||
+                    (inspectDocModal.doc as any).photo_url ||
+                    (inspectDocModal.doc as any).doc_photo ||
+                    (inspectDocModal.doc as any).document_image ||
+                    inspectDocModal.app?.documents?.find((d) => d.previewUrl)?.previewUrl ||
+                    'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'
+                  }
+                  alt={inspectDocModal.doc.name}
+                  className="w-full h-full object-contain max-h-60 rounded-xl"
+                />
+              </div>
+
               <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-2">
                 <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs">
                   📄 OCR Extracted Data & Digital Audit:
