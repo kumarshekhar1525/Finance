@@ -175,7 +175,7 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
 
   // Helper to generate realistic official Indian specimen document images (Aadhaar, PAN, Bank Passbook, ITR, Caste Cert)
   const getDocImageLink = (docType: string, existingUrl?: string): string => {
-    if (existingUrl && existingUrl.startsWith('http') && !existingUrl.includes('unsplash') && !existingUrl.includes('base64')) {
+    if (existingUrl && existingUrl.trim().length > 0) {
       return existingUrl;
     }
     const nameUpper = (applicantName || 'SHEKHAR KUMAR').toUpperCase();
@@ -244,10 +244,10 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
           extractedData.subsidyEligible = '35% Govt. Grant';
         }
 
-        // Use clean HTTP image link instead of heavy base64 to avoid Supabase statement timeouts
-        const realImagePhoto = getDocImageLink(docType, fileDataUrl);
+        // Store actual uploaded file image data URL
+        const realImagePhoto = fileDataUrl || getDocImageLink(docType);
 
-        const newDoc: UploadedDoc = {
+        const newDoc: UploadedDoc & Record<string, any> = {
           id: `doc-${Date.now()}`,
           type: docType,
           name:
@@ -268,6 +268,9 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
           status,
           rejectionReason,
           previewUrl: realImagePhoto,
+          photo_url: realImagePhoto,
+          doc_photo: realImagePhoto,
+          document_image: realImagePhoto,
           extractedData,
         };
 
@@ -378,12 +381,12 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
 
       let cleanSerialId = generateUniqueId();
 
-      // Keep each document's clean HTTP image link to keep payload light (<2KB) and avoid DB timeouts
+      // Preserve actual uploaded photo URL / dataUrl
       const firstUploadedPhoto = documents.find(d => d.previewUrl || (d as any).photo_url || (d as any).doc_photo)?.previewUrl;
-      const userPhoto = getDocImageLink('applicant_photo', firstUploadedPhoto || user?.photoUrl);
+      const userPhoto = firstUploadedPhoto || user?.photoUrl || getDocImageLink('applicant_photo');
 
       const enrichedDocuments = documents.map(d => {
-        const docImage = getDocImageLink(d.type, d.previewUrl || (d as any).photo_url || (d as any).doc_photo || (d as any).document_image);
+        const docImage = d.previewUrl || (d as any).photo_url || (d as any).doc_photo || (d as any).document_image || getDocImageLink(d.type);
         return {
           ...d,
           photo_url: docImage,
@@ -1264,7 +1267,7 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
                       {/* Document Image Photo Preview Thumbnail (Picture 3 requirement) */}
                       <div className="relative w-14 h-14 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden shrink-0 shadow-xs flex items-center justify-center">
                         <img
-                          src={doc.photo_url || doc.doc_photo || doc.document_image || user?.photoUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'}
+                          src={doc.previewUrl || (doc as any).doc_photo || (doc as any).photo_url || (doc as any).document_image || user?.photoUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'}
                           alt={doc.name}
                           className="w-full h-full object-cover"
                         />
