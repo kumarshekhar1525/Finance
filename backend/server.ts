@@ -1,6 +1,10 @@
 import express from 'express';
 import path from 'path';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import bcrypt from 'bcryptjs';
+import { z } from 'zod';
 import { GoogleGenAI } from '@google/genai';
 import { SCHEMES_DATA } from './data/schemes.ts';
 import { 
@@ -15,8 +19,77 @@ import {
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
 
-app.use(cors());
+// Security Middleware: Helmet HTTP Response Headers
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // Disable default CSP to allow flexible UI rendering
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
+
+// Restricted CORS Configuration
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:3000,http://localhost:5000').split(',');
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+        callback(null, true);
+      } else {
+        callback(new Error('CORS Policy violation: Origin not allowed.'));
+      }
+    },
+    credentials: true,
+  })
+);
+
 app.use(express.json({ limit: '15mb' }));
+
+// Rate Limiters for OWASP DDoS & Brute-force Protection
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300, // Limit each IP to 300 requests per 15 mins
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many requests from this IP, please try again after 15 minutes.' },
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // Max 20 auth attempts per 15 mins
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many authentication attempts. Please try again after 15 minutes.' },
+});
+
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30, // Max 30 AI requests per 15 mins
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'AI request rate limit reached. Please wait a few minutes before asking again.' },
+});
+
+// Apply rate limiters to routes
+app.use('/api/', apiLimiter);
+app.use('/api/login', authLimiter);
+app.use('/api/admin/login', authLimiter);
+app.use('/api/auth/', authLimiter);
+app.use('/api/chat', aiLimiter);
+app.use('/api/eligibility/', aiLimiter);
+
+// Zod Validation Schemas
+const LoginSchema = z.object({
+  email: z.string().email('Invalid email address format'),
+  password: z.string().min(6, 'Password must be at least 6 characters long'),
+  role: z.enum(['user', 'admin']).optional().default('user'),
+  user_name: z.string().optional(),
+});
+
+const LoanAppSchema = z.object({
+  applicantAadhaar: z.string().min(12).max(12, 'Aadhaar must be exactly 12 digits'),
+  schemeId: z.string().min(1, 'Scheme ID is required'),
+  requestedAmount: z.number().positive('Requested amount must be positive'),
+}).passthrough();
 
 // Lazy initialize Gemini client
 let geminiClient: GoogleGenAI | null = null;
@@ -286,27 +359,46 @@ app.get('/api/health', (req, res) => {
 // In-memory store for logins
 let loginsStore: any[] = [];
 
-// Record Login API (User & Admin Logins)
-app.post('/api/login', (req, res) => {
-  const { email, password, role, user_name } = req.body;
-  const loginRecord = {
-    id: `log-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-    email: (email || 'user@example.com').toLowerCase().trim(),
-    password: password || '******',
-    role: role || 'user',
-    user_name: user_name || 'User',
-    login_time: new Date().toISOString(),
-    created_at: new Date().toISOString(),
-  };
+// Record Login API (User & Admin Logins) with Password Hashing & Sanitization
+app.post('/api/login', async (req, res) => {
+  try {
+    const validatedData = LoginSchema.safeParse(req.body);
+    const email = (req.body.email || 'user@example.com').toLowerCase().trim();
+    const rawPassword = req.body.password || '******';
+    const role = req.body.role || 'user';
+    const user_name = req.body.user_name || 'User';
 
-  loginsStore.unshift(loginRecord);
-  console.log(`[LOGIN EVENT] Recorded ${loginRecord.role} login:`, loginRecord.email);
-  res.json({ success: true, message: 'Login recorded successfully', data: loginRecord });
+    // Hash password securely using bcrypt (salt rounds = 10)
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
+
+    const loginRecord = {
+      id: `log-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      email,
+      passwordHash: hashedPassword,
+      role,
+      user_name,
+      login_time: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+    };
+
+    loginsStore.unshift(loginRecord);
+    console.log(`[SECURE LOGIN EVENT] Recorded ${loginRecord.role} login:`, loginRecord.email);
+
+    // Return sanitized data without raw password or hash
+    const { passwordHash, ...sanitizedRecord } = loginRecord;
+    res.json({ success: true, message: 'Login recorded successfully', data: { ...sanitizedRecord, password: '[PROTECTED]' } });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: 'Failed to process login request securely.' });
+  }
 });
 
-// Get Logins API
+// Get Logins API (Sanitized Data)
 app.get('/api/login', (req, res) => {
-  res.json({ success: true, count: loginsStore.length, data: loginsStore });
+  const sanitizedLogs = loginsStore.map(({ passwordHash, password, ...rest }) => ({
+    ...rest,
+    password: '[PROTECTED]',
+  }));
+  res.json({ success: true, count: sanitizedLogs.length, data: sanitizedLogs });
 });
 
 // Schemes List
@@ -1194,6 +1286,18 @@ if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.join(distPath, 'index.html'));
   });
 }
+
+// Centralized Error Handling Middleware (Prevents Sensitive Stack Trace Leaks)
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('[SECURITY AUDIT] Unhandled Error:', err);
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({
+    success: false,
+    error: process.env.NODE_ENV === 'production' 
+      ? 'An unexpected error occurred. Please try again later.' 
+      : err.message || 'Internal Server Error',
+  });
+});
 
 function startServer(port: number) {
   const server = app.listen(port, '0.0.0.0', () => {

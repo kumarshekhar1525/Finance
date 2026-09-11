@@ -18,6 +18,7 @@ import {
   Clock,
   CheckCircle2
 } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { SupportedLanguage, UserProfile, LoanApplication, HelpdeskChatTicket, HelpdeskChatMessage } from '../types';
 
 interface AIChatbotProps {
@@ -539,7 +540,7 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ currentLang, user, applica
                             <span className="opacity-75 font-mono">{msg.timestamp}</span>
                           </div>
 
-                          <p className="leading-relaxed whitespace-pre-wrap font-sans text-xs tracking-normal">{msg.text}</p>
+                          <p className="leading-relaxed whitespace-pre-wrap font-sans text-xs tracking-normal">{DOMPurify.sanitize(msg.text)}</p>
                           
                           {msg.sender === 'bot' && (
                             <div className="flex justify-end pt-1">
