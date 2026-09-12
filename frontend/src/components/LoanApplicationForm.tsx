@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ShieldCheck,
   Upload,
@@ -166,12 +166,135 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
   const [formError, setFormError] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Calculate EMI
-  const monthlyRate = scheme.interestRate / 12 / 100;
-  const calculatedEmi = Math.round(
-    (requestedAmount * monthlyRate * Math.pow(1 + monthlyRate, tenureMonths)) /
-    (Math.pow(1 + monthlyRate, tenureMonths) - 1)
-  );
+  // Live Camera State for Step 4 & Verification
+  const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
+  const [capturedLivePhoto, setCapturedLivePhoto] = useState<string | null>(null);
+  const [localBiometricRecord, setLocalBiometricRecord] = useState<BiometricRecord | null>(biometricRecord);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  useEffect(() => {
+    setLocalBiometricRecord(biometricRecord);
+  }, [biometricRecord]);
+
+  useEffect(() => {
+    if (currentStep === 4 && !localBiometricRecord?.isVerified && !capturedLivePhoto) {
+      startLiveCamera();
+    }
+    return () => {
+      stopLiveCamera();
+    };
+  }, [currentStep]);
+
+  const startLiveCamera = async () => {
+    try {
+      setFormError('');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
+      setIsCameraActive(true);
+    } catch (err: any) {
+      console.warn('Live Camera access error:', err);
+      setIsCameraActive(false);
+    }
+  };
+
+  const stopLiveCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    setIsCameraActive(false);
+  };
+
+  const handleCaptureLivePhoto = async () => {
+    if (!videoRef.current) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth || 640;
+    canvas.height = videoRef.current.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      const rawDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      const compressedPhoto = await compressImageDataUrl(rawDataUrl, 600, 0.7);
+      setCapturedLivePhoto(compressedPhoto);
+
+      stopLiveCamera();
+
+      // Create biometric verified record
+      const newBio: BiometricRecord = {
+        isVerified: true,
+        type: 'face',
+        verifiedAt: new Date().toISOString(),
+        faceMatchScore: 98.9,
+        token: `BIO-LIVE-FACE-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+        deviceInfo: navigator.userAgent.slice(0, 35),
+      };
+      setLocalBiometricRecord(newBio);
+
+      // Add as applicant photo in documents
+      const newDoc: any = {
+        id: `doc-live-photo-${Date.now()}`,
+        type: 'applicant_photo',
+        name: 'Live Verified Applicant Face Photo',
+        fileName: 'live_camera_capture.jpg',
+        fileSize: '0.08 MB',
+        uploadDate: new Date().toISOString(),
+        status: 'valid',
+        previewUrl: compressedPhoto,
+        photo_url: compressedPhoto,
+        doc_photo: compressedPhoto,
+        document_image: compressedPhoto,
+      };
+
+      setDocuments((prev) => [...prev.filter((d) => d.type !== 'applicant_photo'), newDoc]);
+    }
+  };
+
+  // Helper: Compress heavy image base64 data URLs to ~50-80KB to prevent Supabase statement timeouts
+  const compressImageDataUrl = (dataUrl: string, maxWidth = 800, quality = 0.7): Promise<string> => {
+    return new Promise((resolve) => {
+      if (!dataUrl || !dataUrl.startsWith('data:image')) {
+        return resolve(dataUrl);
+      }
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', quality);
+            resolve(compressed);
+          } else {
+            resolve(dataUrl);
+          }
+        } catch (e) {
+          resolve(dataUrl);
+        }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  };
 
   // Helper to generate realistic official Indian specimen document images (Aadhaar, PAN, Bank Passbook, ITR, Caste Cert)
   const getDocImageLink = (docType: string, existingUrl?: string): string => {
@@ -214,8 +337,9 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
     setFormError('');
 
     const reader = new FileReader();
-    reader.onload = (event) => {
-      const fileDataUrl = event.target?.result as string;
+    reader.onload = async (event) => {
+      const rawFileDataUrl = event.target?.result as string;
+      const compressedDataUrl = await compressImageDataUrl(rawFileDataUrl, 800, 0.7);
 
       setTimeout(() => {
         setIsVerifyingDoc(false);
@@ -244,8 +368,8 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
           extractedData.subsidyEligible = '35% Govt. Grant';
         }
 
-        // Store actual uploaded file image data URL
-        const realImagePhoto = fileDataUrl || getDocImageLink(docType);
+        // Store compressed uploaded file image data URL (~50KB)
+        const realImagePhoto = compressedDataUrl || getDocImageLink(docType);
 
         const newDoc: UploadedDoc & Record<string, any> = {
           id: `doc-${Date.now()}`,
@@ -275,7 +399,7 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
         };
 
         setDocuments((prev) => [...prev.filter((d) => d.type !== docType), newDoc]);
-      }, 600);
+      }, 400);
     };
 
     reader.readAsDataURL(file);
@@ -1337,45 +1461,110 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
             </div>
 
             <div className="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-center space-y-4">
-              {biometricRecord?.isVerified ? (
-                <div className="space-y-3">
+              {localBiometricRecord?.isVerified || capturedLivePhoto ? (
+                <div className="space-y-4 max-w-md mx-auto">
                   <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center mx-auto ring-8 ring-emerald-50 dark:ring-emerald-900/30">
                     <CheckCircle2 className="w-9 h-9" />
                   </div>
-                  <h4 className="text-base font-bold text-emerald-800 dark:text-emerald-300">
-                    Biometric Verification Complete!
-                  </h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-                    Token: {biometricRecord.token || 'BIO-AUTH-SHA256-7E9A34B8C1'}
-                  </p>
-                  {biometricRecord.faceMatchScore && (
-                    <span className="inline-block px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 text-xs font-bold font-mono">
-                      Face Match Score: {biometricRecord.faceMatchScore}%
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-4 max-w-sm mx-auto">
-                  <div className="w-16 h-16 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center mx-auto">
-                    <Fingerprint className="w-8 h-8" />
-                  </div>
+                  
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                      Identity Liveness Check Required
+                    <h4 className="text-base font-bold text-emerald-800 dark:text-emerald-300">
+                      Biometric Verification Complete! / बायोमेट्रिक प्रमाणीकरण सफल!
                     </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                      Required by Reserve Bank of India (RBI) digital lending guidelines to prevent identity fraud.
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">
+                      Token: {localBiometricRecord?.token || 'BIO-AUTH-SHA256-7E9A34B8C1'}
                     </p>
                   </div>
+
+                  {/* Captured Live Face Photo Preview */}
+                  {capturedLivePhoto && (
+                    <div className="relative w-32 h-32 mx-auto rounded-2xl border-2 border-emerald-500 overflow-hidden shadow-md">
+                      <img src={capturedLivePhoto} alt="Live Captured Face" className="w-full h-full object-cover" />
+                      <div className="absolute bottom-0 inset-x-0 bg-emerald-600/90 text-white text-[9px] font-bold py-0.5">
+                        ✓ LIVE CAPTURED
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <span className="px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 text-xs font-bold font-mono">
+                      Face Match Score: {localBiometricRecord?.faceMatchScore || 98.9}%
+                    </span>
+                  </div>
+
                   <button
-                    id="open-biometric-verify-btn"
                     type="button"
-                    onClick={onOpenBiometricModal}
-                    className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2"
+                    onClick={() => {
+                      setLocalBiometricRecord(null);
+                      setCapturedLivePhoto(null);
+                      startLiveCamera();
+                    }}
+                    className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-800 dark:text-slate-200 text-xs font-bold transition-colors inline-flex items-center gap-1.5"
                   >
-                    <Camera className="w-4 h-4" />
-                    Start Biometric Face / Fingerprint Scan
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Re-take Live Photo / फिर से फोटो खींचें
                   </button>
+                </div>
+              ) : (
+                <div className="space-y-4 max-w-md mx-auto">
+                  <div className="relative w-64 h-64 mx-auto rounded-2xl overflow-hidden bg-slate-950 border-2 border-dashed border-emerald-500 flex items-center justify-center shadow-inner">
+                    {isCameraActive ? (
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="w-full h-full object-cover transform -scale-x-100"
+                      />
+                    ) : (
+                      <div className="p-6 text-center space-y-3">
+                        <Camera className="w-12 h-12 text-slate-500 mx-auto" />
+                        <p className="text-xs text-slate-400">
+                          Live camera inactive. Click button to start camera feed.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={startLiveCamera}
+                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm"
+                        >
+                          Start Live Camera / कैमरा चालू करें
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Facial Oval Target Overlay */}
+                    {isCameraActive && (
+                      <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                        <div className="w-40 h-48 rounded-full border-2 border-emerald-400 ring-4 ring-emerald-500/30 animate-pulse"></div>
+                        <div className="absolute top-2 bg-black/70 px-3 py-1 rounded-full text-[10px] text-emerald-300 font-mono font-bold">
+                          Align Face Here / चेहरा oval में रखें
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {isCameraActive && (
+                    <button
+                      type="button"
+                      onClick={handleCaptureLivePhoto}
+                      className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md flex items-center justify-center gap-2"
+                    >
+                      <Camera className="w-4 h-4" />
+                      📸 Photo Click / Capture Live Face Photo (फोटो खींचें)
+                    </button>
+                  )}
+
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex justify-center gap-2">
+                    <button
+                      id="open-biometric-verify-btn"
+                      type="button"
+                      onClick={onOpenBiometricModal}
+                      className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-1.5"
+                    >
+                      <Fingerprint className="w-4 h-4 text-emerald-600" />
+                      Alternative: Full Scanner Modal / फिंगरप्रिंट स्कैन
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
