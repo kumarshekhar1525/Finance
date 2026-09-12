@@ -753,6 +753,7 @@ export default function App() {
         onOpenNotifications={() => setIsNotificationsOpen(true)}
         activeTab={activeTab}
         onSelectTab={(tab) => {
+          setSelectedSchemeForApply(null);
           if (tab === 'admin') {
             const hasAdminAuth = sessionStorage.getItem('jandhan_admin_auth') === 'true';
             if (!hasAdminAuth) {
@@ -769,6 +770,7 @@ export default function App() {
         }}
         isAdmin={isAdmin}
         onToggleAdmin={() => {
+          setSelectedSchemeForApply(null);
           if (!isAdmin) {
             const hasAdminAuth = sessionStorage.getItem('jandhan_admin_auth') === 'true';
             if (!hasAdminAuth) {
@@ -782,6 +784,10 @@ export default function App() {
             setIsAdmin(false);
             setActiveTab('schemes');
           }
+        }}
+        onOpenApplyForm={() => {
+          const targetScheme = (schemes && schemes.length > 0 ? schemes[0] : null) || SCHEMES_DATA[0];
+          setSelectedSchemeForApply(targetScheme);
         }}
       />
 

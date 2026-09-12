@@ -33,6 +33,7 @@ interface NavbarProps {
   onSelectTab: (tab: 'schemes' | 'applications' | 'calculator' | 'eligibility' | 'admin') => void;
   isAdmin: boolean;
   onToggleAdmin: () => void;
+  onOpenApplyForm?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -50,6 +51,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectTab,
   isAdmin,
   onToggleAdmin,
+  onOpenApplyForm,
 }) => {
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -143,6 +145,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Sliders className="w-4 h-4" />
               {t.calculator}
+            </button>
+
+            {/* Direct Apply Loan Action Button */}
+            <button
+              id="nav-apply-loan-btn"
+              onClick={() => {
+                if (onOpenApplyForm) onOpenApplyForm();
+              }}
+              className="ml-2 px-3 py-1.5 rounded-lg text-xs font-extrabold bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white shadow-sm flex items-center gap-1.5 transition-all hover:scale-105"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>{currentLang === 'hi' ? '🟢 ऋण आवेदन करें' : '🟢 Apply Loan'}</span>
             </button>
           </nav>
 

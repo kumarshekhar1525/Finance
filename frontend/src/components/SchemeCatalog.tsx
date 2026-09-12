@@ -30,7 +30,7 @@ import {
   Bot
 } from 'lucide-react';
 import { Scheme, LoanCategory, BeneficiaryFilter, SupportedLanguage } from '../types';
-import { INDIAN_STATES, LOAN_CATEGORIES_METADATA } from '../data/schemes';
+import { INDIAN_STATES, LOAN_CATEGORIES_METADATA, SCHEMES_DATA } from '../data/schemes';
 import { translations } from '../lib/i18n';
 
 export const matchSchemeWithQuery = (scheme: Scheme, query: string): boolean => {
@@ -485,7 +485,8 @@ export const SchemeCatalog: React.FC<SchemeCatalogProps> = ({
             {/* Action Card 1: Apply for Loan */}
             <button
               onClick={() => {
-                if (schemes.length > 0) onSelectSchemeToApply(schemes[0]);
+                const targetScheme = (schemes && schemes.length > 0 ? schemes[0] : null) || SCHEMES_DATA[0];
+                onSelectSchemeToApply(targetScheme);
               }}
               className="p-4 rounded-2xl bg-gradient-to-br from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-left shadow-lg border border-orange-400/30 group transition-all hover:scale-[1.02]"
             >
@@ -903,7 +904,7 @@ export const SchemeCatalog: React.FC<SchemeCatalogProps> = ({
 
                 <button
                   id={`apply-scheme-btn-${scheme.id}`}
-                  onClick={() => onSelectSchemeToApply(scheme)}
+                  onClick={() => onSelectSchemeToApply(scheme || SCHEMES_DATA[0])}
                   className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white text-xs font-extrabold shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5 transition-all hover:scale-102"
                 >
                   <span>{currentLang === 'hi' ? '🟢 वेबसाइट पर आवेदन' : '🟢 Apply Here'}</span>
