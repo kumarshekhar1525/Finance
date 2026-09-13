@@ -125,12 +125,18 @@ export default function App() {
   const [selectedDepositScheme, setSelectedDepositScheme] = useState<DepositScheme | null>(null);
   const [depositApplications, setDepositApplications] = useState<DepositApplication[]>([]);
   const [isAdmin, setIsAdmin] = useState<boolean>(() => {
-    return localStorage.getItem('jandhan_is_admin') === 'true' || sessionStorage.getItem('jandhan_admin_auth') === 'true';
+    try {
+      return localStorage.getItem('jandhan_is_admin') === 'true' || sessionStorage.getItem('jandhan_admin_auth') === 'true';
+    } catch (e) {
+      return false;
+    }
   });
 
   // Keep admin status synced in localStorage
   useEffect(() => {
-    localStorage.setItem('jandhan_is_admin', isAdmin ? 'true' : 'false');
+    try {
+      localStorage.setItem('jandhan_is_admin', isAdmin ? 'true' : 'false');
+    } catch (e) {}
   }, [isAdmin]);
 
   // State: User Profile (Aadhaar based)
@@ -818,7 +824,10 @@ export default function App() {
         onSelectTab={(tab) => {
           setSelectedSchemeForApply(null);
           if (tab === 'admin') {
-            const hasAdminAuth = sessionStorage.getItem('jandhan_admin_auth') === 'true';
+            let hasAdminAuth = false;
+            try {
+              hasAdminAuth = sessionStorage.getItem('jandhan_admin_auth') === 'true';
+            } catch (e) {}
             if (!hasAdminAuth) {
               setAuthModalMode('admin');
               setIsAuthModalOpen(true);
@@ -835,7 +844,10 @@ export default function App() {
         onToggleAdmin={() => {
           setSelectedSchemeForApply(null);
           if (!isAdmin) {
-            const hasAdminAuth = sessionStorage.getItem('jandhan_admin_auth') === 'true';
+            let hasAdminAuth = false;
+            try {
+              hasAdminAuth = sessionStorage.getItem('jandhan_admin_auth') === 'true';
+            } catch (e) {}
             if (!hasAdminAuth) {
               setAuthModalMode('admin');
               setIsAuthModalOpen(true);
