@@ -931,6 +931,9 @@ export default function App() {
               const matched = (schemes && schemes.length > 0 ? schemes[0] : null) || SCHEMES_DATA[0];
               setSelectedSchemeForApply(matched);
             }}
+            onApplyDepositScheme={(schemeName, depositAmt, tenureYears) => {
+              setActiveTab('deposits');
+            }}
           />
         ) : activeTab === 'deposits' ? (
           <DepositSchemeCatalog
