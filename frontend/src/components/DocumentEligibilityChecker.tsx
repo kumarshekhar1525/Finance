@@ -388,7 +388,9 @@ export const DocumentEligibilityChecker: React.FC<DocumentEligibilityCheckerProp
   const activeUserPersona: PresetPersona | null = user ? {
     id: 'user-profile-active',
     name: user.fullName,
-    role: `आपकी प्रोफाइल (${user.category === 'obc' ? 'OBC (अन्य पिछड़ा वर्ग)' : user.category === 'sc_st' ? 'SC/ST (35% सब्सिडी)' : user.category})`,
+    role: isHi 
+      ? `आपकी प्रोफाइल (${user.category === 'obc' ? 'OBC (अन्य पिछड़ा वर्ग)' : user.category === 'sc_st' ? 'SC/ST (35% सब्सिडी)' : user.category})`
+      : `Your Profile (${user.category.toUpperCase()} Verified)`,
     roleHi: `आपकी प्रोफाइल (${user.fullName})`,
     avatarText: user.fullName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'SK',
     category: user.category || 'general',
@@ -433,7 +435,7 @@ export const DocumentEligibilityChecker: React.FC<DocumentEligibilityCheckerProp
   const displayPersonas = activeUserPersona ? [activeUserPersona] : [{
     id: 'user-profile-default',
     name: user?.fullName || 'Shekhar Kumar',
-    role: 'आपकी प्रोफाइल (Your Saved Profile)',
+    role: isHi ? 'आपकी प्रोफाइल (सामान्य वर्ग)' : 'Your Saved Profile (general)',
     roleHi: `आपकी प्रोफाइल (${user?.fullName || 'Shekhar Kumar'})`,
     avatarText: (user?.fullName || 'SK').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(),
     category: user?.category || 'general',
@@ -918,40 +920,111 @@ export const DocumentEligibilityChecker: React.FC<DocumentEligibilityCheckerProp
             </div>
           </div>
 
-          {/* Current Uploaded Documents Cards */}
+          {/* Current Uploaded Documents Cards with Visual Photo Thumbnails */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {uploadedFiles.map((doc) => (
               <div 
                 key={doc.id}
-                className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col justify-between space-y-3 relative group"
+                className="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm flex flex-col justify-between space-y-3 relative group hover:shadow-md transition-shadow"
               >
                 <button 
                   onClick={() => removeDocument(doc.id)}
-                  className="absolute top-2.5 right-2.5 p-1 text-slate-400 hover:text-red-500 rounded-lg transition-colors"
+                  className="absolute top-2.5 right-2.5 z-10 p-1 bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-red-500 rounded-full transition-colors"
                   title="Remove Document"
                 >
                   <X className="w-4 h-4" />
                 </button>
 
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
-                    <FileText className="w-5 h-5" />
+                {/* Visual Document Card Header / Photo Thumbnail */}
+                {doc.type === 'aadhaar' || doc.type === 'father_aadhaar' || doc.type === 'mother_aadhaar' ? (
+                  <div className="rounded-xl overflow-hidden border border-amber-300/40 bg-gradient-to-br from-amber-500/10 via-slate-900 to-slate-950 p-3 space-y-2 relative">
+                    <div className="flex items-center justify-between text-[10px] font-extrabold text-amber-400 uppercase tracking-wider">
+                      <span className="flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                        Government of India • UIDAI
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">Verified</span>
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-1">
+                      <div className="w-12 h-14 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden shrink-0 flex flex-col items-center justify-center">
+                        <img 
+                          src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80" 
+                          alt="Aadhaar Photo" 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <p className="text-xs font-extrabold text-white truncate font-serif">{user?.fullName || 'Shekhar Kumar'}</p>
+                        <p className="text-[10px] font-mono text-amber-200">Aadhaar: XXXX-XXXX-2088</p>
+                        <p className="text-[9px] text-slate-400">DOB: 15/08/1996 • Male</p>
+                        <div className="flex items-center gap-1 text-[9px] text-emerald-400 font-bold">
+                          <CheckCircle2 className="w-2.5 h-2.5" /> Biometric Verified
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="min-w-0 pr-6">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                      {doc.type.replace('_', ' ')}
-                    </span>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                      {doc.name}
-                    </h4>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                      {doc.fileName} • {doc.fileSize}
-                    </p>
+                ) : doc.type === 'pan' ? (
+                  <div className="rounded-xl overflow-hidden border border-blue-400/40 bg-gradient-to-br from-blue-900/40 via-slate-900 to-slate-950 p-3 space-y-2 relative">
+                    <div className="flex items-center justify-between text-[10px] font-extrabold text-blue-400 uppercase tracking-wider">
+                      <span className="flex items-center gap-1">
+                        <Landmark className="w-3.5 h-3.5 text-blue-400" />
+                        Income Tax Dept • NSDL PAN
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono">Verified</span>
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-1">
+                      <div className="w-12 h-14 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden shrink-0 flex flex-col items-center justify-center">
+                        <img 
+                          src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80" 
+                          alt="PAN Photo" 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <p className="text-xs font-extrabold text-white truncate font-serif">{user?.fullName || 'Shekhar Kumar'}</p>
+                        <p className="text-[10px] font-mono font-bold text-blue-300">PAN: BKPVR****Y</p>
+                        <p className="text-[9px] text-slate-400">Status: Active Taxpayer</p>
+                        <div className="flex items-center gap-1 text-[9px] text-emerald-400 font-bold">
+                          <CheckCircle2 className="w-2.5 h-2.5" /> NSDL Compliant
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                ) : (
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0 pr-6">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                        {doc.type.replace('_', ' ')}
+                      </span>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                        {doc.name}
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                        {doc.fileName} • {doc.fileSize}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="min-w-0 pt-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block">
+                    {doc.type.replace('_', ' ')}
+                  </span>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {doc.name}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    {doc.fileName} • {doc.fileSize}
+                  </p>
                 </div>
 
                 {doc.extractedDetail && (
-                  <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                     <span className="truncate">{doc.extractedDetail}</span>
                   </div>
