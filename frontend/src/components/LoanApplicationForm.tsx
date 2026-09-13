@@ -52,6 +52,17 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [requestedAmount, setRequestedAmount] = useState<number>(prefillAmount || scheme?.minAmount || 200000);
   const [tenureMonths, setTenureMonths] = useState<number>(prefillTenure || scheme?.tenureMonths || 60);
+
+  // Calculated Monthly EMI formula
+  const calculatedEmi = React.useMemo(() => {
+    const p = requestedAmount || 200000;
+    const rate = scheme?.interestRate ?? 8.5;
+    const r = (rate / 12) / 100;
+    const n = tenureMonths || 60;
+    if (r === 0) return Math.round(p / n);
+    const emi = (p * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    return Math.round(emi);
+  }, [requestedAmount, tenureMonths, scheme?.interestRate]);
   const [purpose, setPurpose] = useState<string>('');
   const [loanTypePreference, setLoanTypePreference] = useState<string>(scheme?.category || 'business_loan');
   const [subsidyRequirement, setSubsidyRequirement] = useState<string>('35_percent_subsidy');
@@ -548,10 +559,10 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
           requested_amount: requestedAmount,
           tenure_months: tenureMonths,
           monthly_emi: calculatedEmi,
-          interest_rate: scheme.interestRate,
-          scheme_id: scheme.id,
-          scheme_name: scheme.name,
-          loan_category: loanTypePreference || scheme.category,
+          interest_rate: scheme?.interestRate ?? 8.5,
+          scheme_id: scheme?.id ?? 'pmegp-2026',
+          scheme_name: scheme?.name ?? 'Government Loan Scheme',
+          loan_category: loanTypePreference || scheme?.category || 'business_loan',
           specific_purpose: `[${loanTypePreference.toUpperCase()}] ${firmOrInstitutionName ? 'Firm/College: ' + firmOrInstitutionName + ' | ' : ''}${purpose || 'Loan requirement for setup and expansion'} | Subsidy Requested: ${subsidyRequirement}`,
 
           applicant_name: applicantName,
@@ -668,13 +679,13 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
           phone: nomineeData.nomineePhone,
           aadhaar: nomineeData.nomineeAadhaar,
         },
-        schemeId: scheme.id,
-        schemeName: scheme.name,
-        category: scheme.category,
+        schemeId: scheme?.id ?? 'pmegp-2026',
+        schemeName: scheme?.name ?? 'Government Loan Scheme',
+        category: scheme?.category ?? 'business_loan',
         requestedAmount,
         tenureMonths,
         monthlyEmi: calculatedEmi,
-        interestRate: scheme.interestRate,
+        interestRate: scheme?.interestRate ?? 8.5,
         purpose: purpose || 'Business setup and working capital',
         documents: [
           ...enrichedDocuments,
@@ -714,18 +725,18 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
               <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-white/20 text-emerald-100 uppercase tracking-wider">
                 100% Digital Loan Application
               </span>
-              <h2 className="text-xl sm:text-2xl font-extrabold mt-1">{scheme.name}</h2>
+              <h2 className="text-xl sm:text-2xl font-extrabold mt-1">{scheme?.name ?? 'Government Loan Scheme'}</h2>
               <p className="text-xs text-emerald-100/90 flex items-center gap-1 mt-0.5">
                 <ShieldCheck className="w-3.5 h-3.5" /> Direct Bank & Government Portal Submission
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <a
-                href={scheme.officialPortalUrl}
+                href={scheme?.officialPortalUrl || '#'}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs border border-blue-400/40"
-                title={scheme.officialPortalUrl}
+                title={scheme?.officialPortalUrl || '#'}
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 <span>सरकारी पोर्टल (Govt Site) पर जाएं</span>
@@ -806,16 +817,16 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
                   <input
                     id="loan-requested-amount-input"
                     type="number"
-                    min={scheme.minAmount}
-                    max={scheme.maxAmount}
+                    min={scheme?.minAmount ?? 50000}
+                    max={scheme?.maxAmount ?? 2500000}
                     value={requestedAmount}
                     onChange={(e) => setRequestedAmount(Number(e.target.value))}
                     className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-base font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
                   />
                 </div>
                 <div className="flex justify-between text-[11px] text-slate-400 mt-1.5 font-mono">
-                  <span>Min: ₹{scheme.minAmount.toLocaleString('en-IN')}</span>
-                  <span>Max: ₹{scheme.maxAmount.toLocaleString('en-IN')}</span>
+                  <span>Min: ₹{(scheme?.minAmount ?? 50000).toLocaleString('en-IN')}</span>
+                  <span>Max: ₹{(scheme?.maxAmount ?? 2500000).toLocaleString('en-IN')}</span>
                 </div>
               </div>
 
@@ -837,7 +848,7 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
                   <option value={120}>120 Months (10 Years)</option>
                 </select>
                 <p className="text-[11px] text-slate-400 mt-1.5">
-                  Interest: <strong>{scheme.interestRate}% p.a.</strong>
+                  Interest: <strong>{scheme?.interestRate ?? 8.5}% p.a.</strong>
                 </p>
               </div>
             </div>
@@ -853,7 +864,7 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
                   <span className="text-xs font-normal"> / month</span>
                 </span>
               </div>
-              {scheme.subsidyPercentage && scheme.subsidyPercentage > 0 && (
+              {scheme?.subsidyPercentage && scheme.subsidyPercentage > 0 && (
                 <div className="text-right">
                   <span className="text-xs text-amber-700 dark:text-amber-300 block font-bold">
                     Govt. Subsidy Grant
@@ -1591,7 +1602,7 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3 text-xs">
                 <div className="flex justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
                   <span className="text-slate-500">Scheme Name:</span>
-                  <span className="font-bold text-slate-900 dark:text-white">{scheme.name}</span>
+                  <span className="font-bold text-slate-900 dark:text-white">{scheme?.name ?? 'Government Loan Scheme'}</span>
                 </div>
                 <div className="flex justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
                   <span className="text-slate-500">Loan Amount:</span>

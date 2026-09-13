@@ -52,7 +52,60 @@ import {
   ApplicationStatus
 } from './types';
 import { SCHEMES_DATA } from './data/schemes';
-import { ShieldCheck, Lock, PhoneCall, HelpCircle, ArrowRight, ExternalLink } from 'lucide-react';
+import { ShieldCheck, Lock, PhoneCall, HelpCircle, ArrowRight, ExternalLink, AlertCircle } from 'lucide-react';
+
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+  onReset?: () => void;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
+}
+
+class FormErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Form ErrorBoundary caught an error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="max-w-3xl mx-auto my-12 p-8 bg-slate-900 rounded-3xl border border-red-500/30 text-white shadow-2xl text-center space-y-4">
+          <div className="w-16 h-16 mx-auto rounded-full bg-red-500/20 text-red-400 flex items-center justify-center">
+            <AlertCircle className="w-8 h-8" />
+          </div>
+          <h3 className="text-xl font-extrabold text-red-300">ऋण आवेदन फॉर्म लोड करने में समस्या (Form Load Notice)</h3>
+          <p className="text-xs text-slate-300 max-w-md mx-auto">
+            {this.state.error?.message || 'आवेदन फॉर्म लोड करने में एक अस्थायी त्रुटि आई है। कृपया पुनः प्रयास करें।'}
+          </p>
+          <div className="pt-2 flex justify-center gap-3">
+            <button
+              onClick={() => {
+                this.setState({ hasError: false });
+                if (this.props.onReset) this.props.onReset();
+              }}
+              className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg transition-all"
+            >
+              🔄 पुनः प्रयास करें (Try Again / Back to Schemes)
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function App() {
   // State: Language & Theme
@@ -795,17 +848,19 @@ export default function App() {
       <main className="flex-1">
         {/* Wizard Form View (If a scheme is currently being applied for) */}
         {selectedSchemeForApply ? (
-          <LoanApplicationForm
-            scheme={selectedSchemeForApply}
-            user={user}
-            onCancel={() => setSelectedSchemeForApply(null)}
-            onSubmitSuccess={handleApplicationSubmitSuccess}
-            onOpenBiometricModal={() => setIsBiometricModalOpen(true)}
-            biometricRecord={biometricRecord}
-            prefillAmount={prefillCalcAmount}
-            prefillTenure={prefillCalcTenure}
-            onUpdateUser={setUser}
-          />
+          <FormErrorBoundary onReset={() => setSelectedSchemeForApply(null)}>
+            <LoanApplicationForm
+              scheme={selectedSchemeForApply}
+              user={user}
+              onCancel={() => setSelectedSchemeForApply(null)}
+              onSubmitSuccess={handleApplicationSubmitSuccess}
+              onOpenBiometricModal={() => setIsBiometricModalOpen(true)}
+              biometricRecord={biometricRecord}
+              prefillAmount={prefillCalcAmount}
+              prefillTenure={prefillCalcTenure}
+              onUpdateUser={setUser}
+            />
+          </FormErrorBoundary>
         ) : activeTab === 'admin' ? (
           <AdminDashboard
             applications={applications}
