@@ -14,7 +14,10 @@ import {
   LogOut,
   Sparkles,
   ChevronDown,
-  Landmark
+  Landmark,
+  Menu,
+  X,
+  LayoutGrid
 } from 'lucide-react';
 import { SupportedLanguage, UserProfile, PushNotification } from '../types';
 import { languageNames, translations } from '../lib/i18n';
@@ -54,9 +57,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleAdmin,
   onOpenApplyForm,
 }) => {
+  const [isVerticalNavOpen, setIsVerticalNavOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const t = translations[currentLang] || translations.en;
+  const isEn = currentLang === 'en';
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -65,7 +70,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Tri-color Govt Accent Stripe */}
       <div className="h-1 w-full flex">
         <div className="h-full w-1/3 bg-amber-500"></div>
-        <div className="h-full w-1/3 bg-slate-100 dark:bg-slate-800"></div>
+        <div className="h-full w-1/3 bg-blue-600"></div>
         <div className="h-full w-1/3 bg-emerald-600"></div>
       </div>
 
@@ -77,15 +82,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => onSelectTab('schemes')}
             className="flex items-center gap-3 cursor-pointer select-none group"
           >
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-800 flex items-center justify-center text-white shadow-md shadow-emerald-700/20 ring-2 ring-emerald-500/20 group-hover:scale-105 transition-transform">
-              <ShieldCheck className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-100" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-700 to-indigo-900 flex items-center justify-center text-white shadow-md shadow-blue-700/20 ring-2 ring-blue-500/20 group-hover:scale-105 transition-transform">
+              <ShieldCheck className="w-6 h-6 sm:w-7 sm:h-7 text-blue-100" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-base sm:text-xl tracking-tight text-slate-900 dark:text-white font-serif">
-                  JanDhan<span className="text-emerald-600 dark:text-emerald-400">Setu</span>
+                  JanDhan<span className="text-blue-600 dark:text-blue-400">Setu</span>
                 </span>
-                <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/70 border border-blue-200 dark:border-blue-800 text-[10px] font-bold text-blue-700 dark:text-blue-300">
                   <Lock className="w-2.5 h-2.5" /> 256-Bit Encrypted
                 </span>
               </div>
@@ -132,7 +137,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span>{currentLang === 'hi' ? 'दस्तावेज़ पात्रता चेकर' : 'Check Eligibility'}</span>
+              <span>{isEn ? 'Check Eligibility' : 'दस्तावेज़ पात्रता चेकर'}</span>
             </button>
 
             <button
@@ -145,7 +150,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               <Landmark className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span>{currentLang === 'hi' ? 'बचत व ब्याज योजनाएं' : 'Savings & Deposits'}</span>
+              <span>{isEn ? 'Savings & Deposits' : 'बचत व ब्याज योजनाएं'}</span>
             </button>
 
             <button
@@ -170,12 +175,22 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="ml-2 px-3.5 py-2 rounded-lg text-xs font-extrabold bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white shadow-md shadow-blue-600/30 flex items-center gap-1.5 transition-all hover:scale-105"
             >
               <FileText className="w-3.5 h-3.5" />
-              <span>{currentLang === 'hi' ? '🔵 ऋण आवेदन करें' : '🔵 Apply Loan'}</span>
+              <span>{isEn ? '🔵 Apply Loan' : '🔵 ऋण आवेदन करें'}</span>
             </button>
           </nav>
 
           {/* Right Action Bar */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Vertical Stack Navigation Toggle Button */}
+            <button
+              onClick={() => setIsVerticalNavOpen(!isVerticalNavOpen)}
+              className="px-2.5 py-1.5 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center gap-1.5 hover:bg-blue-100 transition-colors"
+              title="Toggle Vertical Navigation Layout"
+            >
+              <LayoutGrid className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span className="hidden sm:inline">{isEn ? 'Vertical Menu' : 'वर्टीकल मेनू'}</span>
+            </button>
+
             {/* Language Switcher */}
             <div className="relative">
               <button
@@ -184,7 +199,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 title="Select Language"
               >
-                <Globe className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <Globe className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 <span className="hidden sm:inline">{languageNames[currentLang]?.native}</span>
                 <span className="sm:hidden uppercase">{currentLang}</span>
                 <ChevronDown className="w-3 h-3 text-slate-400" />
@@ -208,7 +223,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       }}
                       className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between transition-colors ${
                         currentLang === key
-                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold'
+                          ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-bold'
                           : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'
                       }`}
                     >
@@ -348,7 +363,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button
           onClick={() => onSelectTab('schemes')}
           className={`px-3 py-1 rounded-md ${
-            activeTab === 'schemes' && !isAdmin ? 'bg-emerald-600 text-white' : 'text-slate-600 dark:text-slate-300'
+            activeTab === 'schemes' && !isAdmin ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'
           }`}
         >
           {t.home}
@@ -356,15 +371,23 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button
           onClick={() => onSelectTab('eligibility')}
           className={`px-3 py-1 rounded-md ${
-            activeTab === 'eligibility' ? 'bg-emerald-600 text-white' : 'text-slate-600 dark:text-slate-300'
+            activeTab === 'eligibility' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'
           }`}
         >
-          {currentLang === 'hi' ? 'पात्रता' : 'Eligibility'}
+          {isEn ? 'Eligibility' : 'पात्रता'}
+        </button>
+        <button
+          onClick={() => onSelectTab('deposits')}
+          className={`px-3 py-1 rounded-md ${
+            activeTab === 'deposits' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'
+          }`}
+        >
+          {isEn ? 'Deposits' : 'बचत'}
         </button>
         <button
           onClick={() => onSelectTab('applications')}
           className={`px-3 py-1 rounded-md ${
-            activeTab === 'applications' ? 'bg-emerald-600 text-white' : 'text-slate-600 dark:text-slate-300'
+            activeTab === 'applications' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'
           }`}
         >
           {t.myApplications}
@@ -372,12 +395,184 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button
           onClick={() => onSelectTab('calculator')}
           className={`px-3 py-1 rounded-md ${
-            activeTab === 'calculator' ? 'bg-emerald-600 text-white' : 'text-slate-600 dark:text-slate-300'
+            activeTab === 'calculator' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-300'
           }`}
         >
           {t.calculator}
         </button>
       </div>
+
+      {/* Vertical Navigation Slide-Over Drawer Overlay */}
+      {isVerticalNavOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden animate-in fade-in duration-200">
+          <div 
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity" 
+            onClick={() => setIsVerticalNavOpen(false)}
+          />
+
+          <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            <div className="w-screen max-w-sm bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col justify-between p-6">
+              <div className="space-y-6">
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold">
+                      <LayoutGrid className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-slate-900 dark:text-white font-serif text-base">
+                        {isEn ? 'Vertical Navigation' : 'वर्टीकल मेनू सूची'}
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {isEn ? 'Direct Portal Navigation' : 'पोर्टल नेविगेशन विकल्प'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsVerticalNavOpen(false)}
+                    className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Navigation Links List */}
+                <div className="space-y-2">
+                  <button
+                    onClick={() => {
+                      onSelectTab('schemes');
+                      setIsVerticalNavOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
+                      activeTab === 'schemes' && !isAdmin
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <ShieldCheck className="w-5 h-5" />
+                      <span>{isEn ? 'Home / All Schemes' : 'होम / सभी योजनाएं'}</span>
+                    </div>
+                    <span className="text-xs opacity-75 font-mono">01</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      onSelectTab('applications');
+                      setIsVerticalNavOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
+                      activeTab === 'applications'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-5 h-5" />
+                      <span>{isEn ? 'Track Applications' : 'आवेदन स्थिति ट्रैक करें'}</span>
+                    </div>
+                    <span className="text-xs opacity-75 font-mono">02</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      onSelectTab('eligibility');
+                      setIsVerticalNavOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
+                      activeTab === 'eligibility'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Sparkles className="w-5 h-5" />
+                      <span>{isEn ? 'Check Eligibility' : 'पात्रता चेकर'}</span>
+                    </div>
+                    <span className="text-xs opacity-75 font-mono">03</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      onSelectTab('deposits');
+                      setIsVerticalNavOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
+                      activeTab === 'deposits'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Landmark className="w-5 h-5" />
+                      <span>{isEn ? 'Savings & Deposits' : 'बचत व ब्याज योजनाएं'}</span>
+                    </div>
+                    <span className="text-xs opacity-75 font-mono">04</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      onSelectTab('calculator');
+                      setIsVerticalNavOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
+                      activeTab === 'calculator'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Sliders className="w-5 h-5" />
+                      <span>{isEn ? 'Loan EMI & SIP Calculator' : 'ऋण ईएमआई व SIP कैलकुलेटर'}</span>
+                    </div>
+                    <span className="text-xs opacity-75 font-mono">05</span>
+                  </button>
+
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800" />
+
+                  <button
+                    onClick={() => {
+                      onToggleAdmin();
+                      setIsVerticalNavOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-extrabold bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 shadow-md transition-all hover:scale-102"
+                  >
+                    <div className="flex items-center gap-3">
+                      <LayoutDashboard className="w-5 h-5 text-slate-950" />
+                      <span>{isAdmin ? (isEn ? 'Exit Admin Mode' : 'नागरिक मोड पर जाएं') : (isEn ? 'Bank Admin Portal' : 'बैंक प्रशासक पोर्टल')}</span>
+                    </div>
+                    <Lock className="w-4 h-4" />
+                  </button>
+
+                  {onOpenApplyForm && (
+                    <button
+                      onClick={() => {
+                        onOpenApplyForm();
+                        setIsVerticalNavOpen(false);
+                      }}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-sm font-extrabold bg-blue-600 text-white shadow-lg shadow-blue-600/30 transition-all hover:bg-blue-700 mt-2"
+                    >
+                      <FileText className="w-5 h-5" />
+                      <span>{isEn ? 'Apply For Loan Now' : 'ऋण के लिए तुरंत आवेदन करें'}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Drawer Footer */}
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  <span>{isEn ? 'Security Level' : 'सुरक्षा स्तर'}</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">256-Bit SSL Encrypted</span>
+                </div>
+                <div className="text-[11px] text-center text-slate-400">
+                  JanDhanSetu © 2026 • Government Nodal Portal
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };
