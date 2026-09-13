@@ -123,7 +123,62 @@ export default function App() {
   // State: Navigation Tabs & Admin Toggle
   const [activeTab, setActiveTab] = useState<'schemes' | 'applications' | 'calculator' | 'eligibility' | 'deposits' | 'admin'>('schemes');
   const [selectedDepositScheme, setSelectedDepositScheme] = useState<DepositScheme | null>(null);
-  const [depositApplications, setDepositApplications] = useState<DepositApplication[]>([]);
+  // Pre-seeded Default Deposit Applications
+  const DEFAULT_DEPOSIT_APPLICATIONS: DepositApplication[] = [
+    {
+      id: 'DEP-2026-98124',
+      trackingId: 'DEP-2026-98124',
+      applicantAadhaar: '987654321098',
+      applicantPan: 'ABCDE1234F',
+      applicantName: 'Shekhar Kumar',
+      applicantPhone: '+91 98765 43210',
+      applicantEmail: 'shekhar.kumar@example.com',
+      applicantState: 'Bihar',
+      applicantCategory: 'general',
+      dob: '1992-06-20',
+      age: 34,
+      parentName: 'Sunil Kumar',
+      depositAmount: 50000,
+      investmentType: 'sip',
+      frequency: 'monthly',
+      tenureYears: 5,
+      maturityDays: 1826,
+      expectedMaturityAmount: 385000,
+      schemeId: 'sukanya-samriddhi',
+      schemeName: 'Sukanya Samriddhi Yojana (8.2% Interest)',
+      nomineeName: 'Priya Sharma',
+      nomineeRelation: 'Daughter',
+      status: 'submitted',
+      appliedDate: new Date().toISOString(),
+      documents: [
+        {
+          id: 'doc-dep-1',
+          type: 'aadhaar',
+          name: 'Aadhaar Card Verified',
+          fileName: 'aadhaar_scan.pdf',
+          fileSize: '0.8 MB',
+          uploadDate: new Date().toISOString(),
+          status: 'valid'
+        }
+      ],
+      biometric: { isVerified: true, type: 'face' }
+    }
+  ];
+
+  const [depositApplications, setDepositApplications] = useState<DepositApplication[]>(() => {
+    try {
+      const saved = localStorage.getItem('jandhan_deposit_applications');
+      if (saved) {
+        const list = JSON.parse(saved);
+        if (Array.isArray(list) && list.length > 0) return list;
+      }
+    } catch (e) {}
+    try {
+      localStorage.setItem('jandhan_deposit_applications', JSON.stringify(DEFAULT_DEPOSIT_APPLICATIONS));
+    } catch (e) {}
+    return DEFAULT_DEPOSIT_APPLICATIONS;
+  });
+
   const [isAdmin, setIsAdmin] = useState<boolean>(() => {
     try {
       return localStorage.getItem('jandhan_is_admin') === 'true' || sessionStorage.getItem('jandhan_admin_auth') === 'true';

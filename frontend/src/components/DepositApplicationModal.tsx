@@ -258,6 +258,14 @@ export const DepositApplicationModal: React.FC<DepositApplicationModalProps> = (
       }
     }
 
+    try {
+      const existingStr = localStorage.getItem('jandhan_deposit_applications');
+      const existingList = existingStr ? JSON.parse(existingStr) : [];
+      localStorage.setItem('jandhan_deposit_applications', JSON.stringify([newApp, ...existingList]));
+    } catch (e) {
+      console.warn('Could not save deposit application to localStorage:', e);
+    }
+
     setIsSubmitting(false);
     onSubmitSuccess(newApp);
   };
