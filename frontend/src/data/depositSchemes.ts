@@ -22,7 +22,18 @@ export const DEPOSIT_SCHEMES_DATA: DepositScheme[] = [
       'बालिका की 18 वर्ष आयु होने पर 50% राशि उच्च शिक्षा हेतु निकासी योग्य',
       'न्यूनतम केवल ₹250 से खाता शुरू करें'
     ],
-    requiredDocs: ['Aadhaar Card of Parent/Guardian', 'Birth Certificate of Girl Child', 'PAN Card', 'Bank Passbook Photo', 'Live Face Photo'],
+    featuresEn: [
+      '8.2% Highest Compound Interest Rate (100% Sovereign Govt Guarantee)',
+      '100% Tax Exempt under Section 80C up to ₹1.5 Lakh (EEE Category)',
+      '50% Premature Withdrawal allowed after girl child turns 18 for higher education',
+      'Start with minimum ₹250 deposit per year'
+    ],
+    investmentType: 'both',
+    frequencyOptions: ['monthly', 'yearly'],
+    allowPrematureWithdrawal: true,
+    prematureWithdrawalRulesEn: 'Allowed after age 18 (50% for education/marriage) or severe medical emergency.',
+    prematureWithdrawalRulesHi: '18 वर्ष की आयु के बाद (शिक्षा/विवाह हेतु 50%) या गंभीर चिकित्सा स्थिति में निकासी अनुमत।',
+    requiredDocs: ['Parent / Guardian Aadhaar Card', 'Birth Certificate of Girl Child (शिशु जन्म प्रमाण पत्र)', 'PAN Card', 'Bank Passbook Photo', 'Live Face Photo'],
     iconName: 'HeartHandshake'
   },
   {
@@ -46,6 +57,17 @@ export const DEPOSIT_SCHEMES_DATA: DepositScheme[] = [
       '1 वर्ष बाद 40% आंशिक निकासी की अनुमति',
       'शत-प्रतिशत सरकारी सुरक्षा एवं ब्याज की गारंटी'
     ],
+    featuresEn: [
+      '7.5% Fixed Annual Interest Rate (Quarterly Compounding)',
+      'Short 2-Year Maturity Period',
+      '40% Partial Withdrawal permitted after 1 year',
+      '100% Sovereign Government Safety & Interest Guarantee'
+    ],
+    investmentType: 'lumpsum',
+    frequencyOptions: ['yearly'],
+    allowPrematureWithdrawal: true,
+    prematureWithdrawalRulesEn: '40% partial withdrawal allowed after 1 year. Premature closure permitted with 2% interest reduction.',
+    prematureWithdrawalRulesHi: '1 वर्ष बाद 40% आंशिक निकासी। 2% ब्याज कटौती के साथ समयपूर्व खाता बंद करने की छूट।',
     requiredDocs: ['Applicant Aadhaar Card', 'PAN Card', 'Bank Passbook Photo', 'Live Face Photo'],
     iconName: 'Sparkles'
   },
@@ -70,6 +92,17 @@ export const DEPOSIT_SCHEMES_DATA: DepositScheme[] = [
       'धारा 80C के तहत टैक्स बचत',
       '5 साल की अवधि जिसे 3 साल और बढ़ाया जा सकता है'
     ],
+    featuresEn: [
+      '8.2% Annual Interest - Quarterly direct pension credit to bank account',
+      'Maximum Deposit limit up to ₹30 Lakhs',
+      'Tax savings under Section 80C',
+      '5-Year Tenure extendable by an additional 3 years'
+    ],
+    investmentType: 'lumpsum',
+    frequencyOptions: ['quarterly'],
+    allowPrematureWithdrawal: true,
+    prematureWithdrawalRulesEn: 'Allowed after 1 year with 1.5% deduction; after 2 years with 1% deduction.',
+    prematureWithdrawalRulesHi: '1 वर्ष बाद 1.5% कटौती पर; 2 वर्ष बाद 1% कटौती के साथ समयपूर्व निकासी अनुमत।',
     requiredDocs: ['Aadhaar Card', 'PAN Card', 'Age Proof / Pension Card', 'Bank Passbook Photo', 'Live Face Photo'],
     iconName: 'ShieldCheck'
   },
@@ -94,6 +127,17 @@ export const DEPOSIT_SCHEMES_DATA: DepositScheme[] = [
       '7वें वर्ष से लोन एवं आंशिक निकासी की सुविधा',
       '15 साल की अवधि के बाद 5-5 साल के ब्लॉक में बढ़ाने की सुविधा'
     ],
+    featuresEn: [
+      '7.1% Compounded Interest (100% Tax Free)',
+      'EEE Status: 0% Tax on Deposit, Interest, and Maturity Amount',
+      'Partial withdrawal and loan facility available from 7th year',
+      '15-Year tenure extendable in blocks of 5 years'
+    ],
+    investmentType: 'both',
+    frequencyOptions: ['monthly', 'quarterly', 'half_yearly', 'yearly'],
+    allowPrematureWithdrawal: true,
+    prematureWithdrawalRulesEn: 'Partial withdrawal allowed from 7th financial year up to 50% of balance.',
+    prematureWithdrawalRulesHi: '7वें वित्तीय वर्ष से 50% तक आंशिक निकासी की अनुमति।',
     requiredDocs: ['Aadhaar Card', 'PAN Card', 'Bank Passbook Photo', 'Live Face Photo', 'Nominee Aadhaar'],
     iconName: 'PiggyBank'
   },

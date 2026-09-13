@@ -102,7 +102,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => onSelectTab('schemes')}
               className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-all ${
                 activeTab === 'schemes' && !isAdmin
-                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300'
+                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 font-bold'
                   : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
@@ -114,7 +114,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => onSelectTab('applications')}
               className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 ${
                 activeTab === 'applications'
-                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300'
+                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 font-bold'
                   : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
@@ -127,11 +127,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => onSelectTab('eligibility')}
               className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 ${
                 activeTab === 'eligibility'
-                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300'
+                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 font-bold'
                   : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               <span>{currentLang === 'hi' ? 'दस्तावेज़ पात्रता चेकर' : 'Check Eligibility'}</span>
             </button>
 
@@ -140,11 +140,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => onSelectTab('deposits')}
               className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 ${
                 activeTab === 'deposits'
-                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300'
+                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 font-bold'
                   : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              <Landmark className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <Landmark className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               <span>{currentLang === 'hi' ? 'बचत व ब्याज योजनाएं' : 'Savings & Deposits'}</span>
             </button>
 
@@ -153,7 +153,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => onSelectTab('calculator')}
               className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 ${
                 activeTab === 'calculator'
-                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300'
+                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 font-bold'
                   : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
@@ -167,10 +167,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => {
                 if (onOpenApplyForm) onOpenApplyForm();
               }}
-              className="ml-2 px-3 py-1.5 rounded-lg text-xs font-extrabold bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white shadow-sm flex items-center gap-1.5 transition-all hover:scale-105"
+              className="ml-2 px-3.5 py-2 rounded-lg text-xs font-extrabold bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white shadow-md shadow-blue-600/30 flex items-center gap-1.5 transition-all hover:scale-105"
             >
               <FileText className="w-3.5 h-3.5" />
-              <span>{currentLang === 'hi' ? '🟢 ऋण आवेदन करें' : '🟢 Apply Loan'}</span>
+              <span>{currentLang === 'hi' ? '🔵 ऋण आवेदन करें' : '🔵 Apply Loan'}</span>
             </button>
           </nav>
 

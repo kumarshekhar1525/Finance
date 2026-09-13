@@ -7,7 +7,12 @@ import {
   ArrowRight, 
   PieChart, 
   CheckCircle,
-  Sparkles
+  Sparkles,
+  TrendingUp,
+  Landmark,
+  ShieldCheck,
+  Award,
+  RefreshCw
 } from 'lucide-react';
 import { SupportedLanguage } from '../types';
 import { translations } from '../lib/i18n';
@@ -21,17 +26,29 @@ export const LoanCalculator: React.FC<LoanCalculatorProps> = ({
   currentLang,
   onApplyWithConfig,
 }) => {
+  const isEn = currentLang === 'en';
   const t = translations[currentLang] || translations.en;
 
+  const [activeCalcTab, setActiveCalcTab] = useState<'loan' | 'savings'>('loan');
+
+  // --- LOAN EMI STATE ---
   const [loanAmount, setLoanAmount] = useState<number>(1000000); // 10 Lakhs default
   const [interestRate, setInterestRate] = useState<number>(8.5); // 8.5% default
   const [tenureYears, setTenureYears] = useState<number>(5); // 5 years default
   const [showAmortization, setShowAmortization] = useState(false);
 
-  // EMI Calculation: E = P * r * (1 + r)^n / ((1 + r)^n - 1)
+  // --- SAVINGS & SIP STATE ---
+  const [savingsMode, setSavingsMode] = useState<'sip' | 'lumpsum'>('sip');
+  const [savingsFrequency, setSavingsFrequency] = useState<'monthly' | 'quarterly' | 'half_yearly' | 'yearly'>('monthly');
+  const [depositAmount, setDepositAmount] = useState<number>(5000); // ₹5,000 monthly or lumpsum
+  const [savingsInterestRate, setSavingsInterestRate] = useState<number>(8.2); // 8.2% Sukanya / SCSS default
+  const [savingsTenureYears, setSavingsTenureYears] = useState<number>(5);
+  const [applicantDob, setApplicantDob] = useState<string>('2018-06-15');
+  const [parentAadhaarInput, setParentAadhaarInput] = useState<string>('987654321098');
+
+  // EMI Calculation
   const tenureMonths = tenureYears * 12;
   const monthlyRate = interestRate / 12 / 100;
-
   const emi =
     monthlyRate > 0
       ? Math.round(
@@ -44,6 +61,52 @@ export const LoanCalculator: React.FC<LoanCalculatorProps> = ({
   const totalInterest = Math.max(0, totalPayable - loanAmount);
   const interestPercentage = Math.round((totalInterest / totalPayable) * 100) || 0;
   const principalPercentage = 100 - interestPercentage;
+
+  // Savings Maturity & SIP Calculation
+  const savingsMaturityDays = Math.round(savingsTenureYears * 365.25);
+  
+  const computedAge = React.useMemo(() => {
+    if (!applicantDob) return 6;
+    const birth = new Date(applicantDob);
+    const now = new Date();
+    let years = now.getFullYear() - birth.getFullYear();
+    if (now.getMonth() < birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())) {
+      years--;
+    }
+    return years >= 0 ? years : 0;
+  }, [applicantDob]);
+
+  const savingsCalculated = React.useMemo(() => {
+    const r = savingsInterestRate / 100;
+    const tYears = savingsTenureYears;
+
+    if (savingsMode === 'lumpsum') {
+      const principal = depositAmount || 50000;
+      const maturity = principal * Math.pow(1 + r, tYears);
+      const interestEarned = Math.max(0, maturity - principal);
+      return {
+        totalInvested: Math.round(principal),
+        maturityAmount: Math.round(maturity),
+        interestEarned: Math.round(interestEarned),
+      };
+    } else {
+      const freqPerYear = savingsFrequency === 'monthly' ? 12 : savingsFrequency === 'quarterly' ? 4 : savingsFrequency === 'half_yearly' ? 2 : 1;
+      const totalPayments = tYears * freqPerYear;
+      const ratePerPeriod = r / freqPerYear;
+      const p = depositAmount || 2000;
+      let total = 0;
+      for (let i = 1; i <= totalPayments; i++) {
+        total += p * Math.pow(1 + ratePerPeriod, totalPayments - i + 1);
+      }
+      const invested = p * totalPayments;
+      const interestEarned = Math.max(0, total - invested);
+      return {
+        totalInvested: Math.round(invested),
+        maturityAmount: Math.round(total),
+        interestEarned: Math.round(interestEarned),
+      };
+    }
+  }, [depositAmount, savingsInterestRate, savingsTenureYears, savingsMode, savingsFrequency]);
 
   // Format INR currency
   const formatINR = (val: number) => {
@@ -79,33 +142,21 @@ export const LoanCalculator: React.FC<LoanCalculatorProps> = ({
     <div id="loan-calculator-section" className="w-full space-y-8">
       {/* Full-Width Background Photo Banner */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        <div className="relative rounded-3xl overflow-hidden shadow-2xl min-h-[260px] flex items-center justify-between p-6 sm:p-10 border border-slate-800 text-white">
-          <img
-            src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=1600&auto=format&fit=crop&q=80"
-            alt="Financial Growth Calculator"
-            className="absolute inset-0 w-full h-full object-cover object-center scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-emerald-950/70" />
-
+        <div className="relative rounded-3xl overflow-hidden shadow-2xl min-h-[240px] flex items-center justify-between p-6 sm:p-10 border border-blue-900/30 text-white bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950">
           <div className="relative z-10 max-w-2xl space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-extrabold backdrop-blur-md">
-              <Sliders className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '6s' }} />
-              <span>Interactive Financial Planner • Real-time Amortization</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-extrabold backdrop-blur-md">
+              <Sliders className="w-3.5 h-3.5" />
+              <span>{isEn ? 'National Financial Calculator Portal 2026' : 'राष्ट्रीय डिजिटल ब्याज व किस्‍त कैलकुलेटर 2026'}</span>
             </div>
             <h1 className="text-2xl sm:text-4xl font-extrabold text-white font-serif tracking-tight leading-tight">
-              {t.calculatorTitle}
+              {isEn ? 'Loan EMI & Small Savings Interest Calculator' : 'ऋण ईएमआई एवं बैंक बचत ब्याज कैलकुलेटर'}
             </h1>
             <p className="text-xs sm:text-sm text-slate-300">
-              Estimate monthly EMI, interest schedule, and government subsidy savings (up to 35% DBT) in real-time.
+              {isEn
+                ? 'Calculate real-time loan EMIs, capital subsidy savings, and guaranteed returns for Sukanya, Post Office, SCSS & Bank Fixed Deposits.'
+                : 'लोन किस्‍त, 35% सब्सिडी लाभ एवं सुकन्या, पोस्ट ऑफिस, एफडी व एसआईपी बचत ब्याज का रीयल-टाइम हिसाब लगाएं।'}
             </p>
           </div>
-        </div>
-      </div>
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Inputs Column */}
         <div className="lg:col-span-7 bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-7">
           {/* Loan Amount Slider */}
           <div>

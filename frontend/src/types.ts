@@ -305,8 +305,14 @@ export interface DepositScheme {
   guaranteedByGovt: boolean;
   officialPortalUrl: string;
   featuresHi: string[];
+  featuresEn?: string[];
   requiredDocs: string[];
   iconName: string;
+  investmentType?: 'sip' | 'lumpsum' | 'both';
+  frequencyOptions?: ('monthly' | 'quarterly' | 'half_yearly' | 'yearly')[];
+  allowPrematureWithdrawal?: boolean;
+  prematureWithdrawalRulesEn?: string;
+  prematureWithdrawalRulesHi?: string;
 }
 
 export interface DepositApplication {
@@ -319,8 +325,16 @@ export interface DepositApplication {
   applicantEmail: string;
   applicantState: string;
   applicantCategory: BeneficiaryFilter;
+  dob?: string;
+  age?: number;
+  parentName?: string;
+  parentAadhaar?: string;
+  birthCertificateDoc?: string;
   depositAmount: number;
+  investmentType?: 'sip' | 'lumpsum';
+  frequency?: 'monthly' | 'quarterly' | 'half_yearly' | 'yearly';
   tenureYears: number;
+  maturityDays?: number;
   expectedMaturityAmount: number;
   schemeId: string;
   schemeName: string;
@@ -332,7 +346,9 @@ export interface DepositApplication {
   aadhaarDoc?: string;
   panDoc?: string;
   handwrittenDoc?: string;
+  agreePrematureWithdrawalRules?: boolean;
   status: ApplicationStatus;
+  rejectionReason?: string;
   appliedDate: string;
   documents: UploadedDoc[];
   biometric?: BiometricRecord;

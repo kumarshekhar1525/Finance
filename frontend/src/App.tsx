@@ -956,6 +956,7 @@ export default function App() {
         <DepositApplicationModal
           scheme={selectedDepositScheme}
           user={user}
+          currentLang={currentLang}
           onClose={() => setSelectedDepositScheme(null)}
           onSubmitSuccess={(newDepApp) => {
             setDepositApplications((prev) => [newDepApp, ...prev]);
