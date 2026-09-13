@@ -938,7 +938,9 @@ export default function App() {
         ) : activeTab === 'deposits' ? (
           <DepositSchemeCatalog
             currentLang={currentLang}
+            user={user}
             onSelectSchemeToApply={(scheme) => setSelectedDepositScheme(scheme)}
+            onNavigateToTracker={() => setActiveTab('applications')}
           />
         ) : (
           <SchemeCatalog

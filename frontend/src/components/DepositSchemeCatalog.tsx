@@ -23,15 +23,51 @@ import { DEPOSIT_SCHEMES_DATA } from '../data/depositSchemes';
 interface DepositSchemeCatalogProps {
   currentLang: SupportedLanguage;
   onSelectSchemeToApply: (scheme: DepositScheme) => void;
+  user?: UserProfile | null;
+  onNavigateToTracker?: () => void;
 }
 
 export const DepositSchemeCatalog: React.FC<DepositSchemeCatalogProps> = ({
   currentLang,
   onSelectSchemeToApply,
+  user,
+  onNavigateToTracker,
 }) => {
   const isEn = currentLang === 'en';
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Load User's Applied Savings/Deposit Applications
+  const myAppliedDeposits = React.useMemo(() => {
+    try {
+      const saved = localStorage.getItem('jandhan_deposit_applications');
+      if (saved) {
+        const list = JSON.parse(saved);
+        if (Array.isArray(list)) {
+          const userAadhaar = user?.aadhaarNumber?.replace(/\D/g, '') || '';
+          const userPhone = user?.phone?.replace(/\D/g, '') || '';
+          const userName = user?.fullName?.toLowerCase().trim() || '';
+
+          return list.filter((app: any) => {
+            const appAadhaar = (app.applicantAadhaar || '').replace(/\D/g, '');
+            const appPhone = (app.applicantPhone || '').replace(/\D/g, '');
+            const appName = (app.applicantName || '').toLowerCase().trim();
+
+            if (user && (userAadhaar || userPhone || userName)) {
+              return (
+                (userAadhaar && appAadhaar && userAadhaar === appAadhaar) ||
+                (userPhone && appPhone && userPhone === appPhone) ||
+                (userName && appName && userName === appName)
+              );
+            }
+            // Default demo persona fallback
+            return appAadhaar === '987654321098' || appName.includes('shekhar');
+          });
+        }
+      }
+    } catch (e) {}
+    return [];
+  }, [user]);
 
   const filteredSchemes = DEPOSIT_SCHEMES_DATA.filter((scheme) => {
     const matchesCategory =
@@ -99,6 +135,97 @@ export const DepositSchemeCatalog: React.FC<DepositSchemeCatalogProps> = ({
           ))}
         </div>
       </div>
+
+      {/* 🏦 My Applied Savings Accounts Table (Page 2 Dedicated Table for Logged-In User) */}
+      {myAppliedDeposits.length > 0 && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-blue-500/30 shadow-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-md">
+                <Landmark className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white font-serif">
+                  {isEn ? 'My Submitted Savings Accounts & Deposits' : 'मेरे सबमिट किए गए बचत व ब्याज खाते (My Applied Savings)'}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {isEn ? 'Showing active deposit applications for ' : 'सक्रिय बचत खाते: '} <strong className="text-blue-600 dark:text-blue-400">{user?.fullName || 'Shekhar Kumar'}</strong>
+                </p>
+              </div>
+            </div>
+            {onNavigateToTracker && (
+              <button
+                onClick={onNavigateToTracker}
+                className="px-3.5 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center gap-1.5 transition-colors border border-blue-200 dark:border-blue-800"
+              >
+                <span>{isEn ? 'Track Status Live' : 'लाइव स्थिति ट्रैक करें'}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 uppercase tracking-wider font-mono border-b border-slate-200 dark:border-slate-800">
+                <tr>
+                  <th className="py-3 px-4">Tracking ID</th>
+                  <th className="py-3 px-4">Scheme Name</th>
+                  <th className="py-3 px-4">Investment Type</th>
+                  <th className="py-3 px-4">Deposit Amount</th>
+                  <th className="py-3 px-4">Maturity Returns</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-sans">
+                {myAppliedDeposits.map((app: any) => (
+                  <tr key={app.id || app.trackingId} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td className="py-3 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">
+                      {app.trackingId || app.id}
+                    </td>
+                    <td className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">
+                      {app.schemeName}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950 uppercase font-extrabold text-blue-700 dark:text-blue-300 border border-blue-200">
+                        {app.investmentType === 'sip' ? `SIP (${app.frequency || 'Monthly'})` : 'LumpSum (FD)'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-white">
+                      ₹{Number(app.depositAmount || 5000).toLocaleString('en-IN')}
+                      <span className="text-[10px] text-slate-400 font-normal block">Tenure: {app.tenureYears || 5} Yrs</span>
+                    </td>
+                    <td className="py-3 px-4 font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                      ₹{Number(app.expectedMaturityAmount || 15000).toLocaleString('en-IN')}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full capitalize ${
+                        app.status === 'sanctioned' || app.status === 'disbursed'
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                          : app.status === 'rejected'
+                          ? 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300'
+                          : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                      }`}>
+                        {app.status || 'submitted'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      {onNavigateToTracker && (
+                        <button
+                          onClick={onNavigateToTracker}
+                          className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs"
+                        >
+                          Check Status
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Search Bar */}
       <div className="flex items-center justify-between gap-4">

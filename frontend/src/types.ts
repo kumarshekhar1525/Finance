@@ -167,6 +167,7 @@ export interface UserProfile {
   pincode: string;
   category: BeneficiaryFilter;
   photoUrl: string;
+  signatureUrl?: string;
   creditScore: number;
   isAadhaarVerified: boolean;
   biometricVerified: boolean;

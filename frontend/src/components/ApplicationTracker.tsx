@@ -71,6 +71,39 @@ export const ApplicationTracker: React.FC<TrackerProps> = ({
     return cleanAppAadhaar === '987654321098' || appPhone.includes('9876543210');
   });
 
+  const [activeCategoryTab, setActiveCategoryTab] = useState<'loans' | 'deposits'>('loans');
+
+  // Load User's Savings & Deposit Applications
+  const userDepositApps = React.useMemo(() => {
+    try {
+      const saved = localStorage.getItem('jandhan_deposit_applications');
+      if (saved) {
+        const list = JSON.parse(saved);
+        if (Array.isArray(list)) {
+          const userAadhaar = user?.aadhaarNumber?.replace(/\D/g, '') || '';
+          const userPhone = user?.phone?.replace(/\D/g, '') || '';
+          const userName = user?.fullName?.toLowerCase().trim() || '';
+
+          return list.filter((app: any) => {
+            const appAadhaar = (app.applicantAadhaar || '').replace(/\D/g, '');
+            const appPhone = (app.applicantPhone || '').replace(/\D/g, '');
+            const appName = (app.applicantName || '').toLowerCase().trim();
+
+            if (user && (userAadhaar || userPhone || userName)) {
+              return (
+                (userAadhaar && appAadhaar && userAadhaar === appAadhaar) ||
+                (userPhone && appPhone && userPhone === appPhone) ||
+                (userName && appName && userName === appName)
+              );
+            }
+            return appAadhaar === '987654321098' || appName.includes('shekhar');
+          });
+        }
+      }
+    } catch (e) {}
+    return [];
+  }, [user]);
+
   const [selectedAppId, setSelectedAppId] = useState<string>(
     displayApps[0]?.trackingId || displayApps[0]?.id || ''
   );
@@ -189,6 +222,129 @@ export const ApplicationTracker: React.FC<TrackerProps> = ({
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-8">
 
+        {/* 🌟 Category Switcher: Loans vs Savings Deposits */}
+        <div className="flex items-center gap-3 p-2 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700">
+          <button
+            onClick={() => setActiveCategoryTab('loans')}
+            className={`flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-2 ${
+              activeCategoryTab === 'loans'
+                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-700/50'
+            }`}
+          >
+            <CreditCard className="w-4 h-4" />
+            <span>Loan Applications ({displayApps.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveCategoryTab('deposits')}
+            className={`flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-2 ${
+              activeCategoryTab === 'deposits'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-700/50'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4 text-blue-300" />
+            <span>🏦 Savings & Deposit Accounts ({userDepositApps.length})</span>
+          </button>
+        </div>
+
+      {/* VIEW 2: SAVINGS DEPOSITS TRACKER VIEW */}
+      {activeCategoryTab === 'deposits' ? (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-blue-500/30 shadow-xl space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div>
+              <h3 className="text-lg font-extrabold text-slate-900 dark:text-white font-serif">
+                🏦 My Savings Deposit Applications & Active Accounts
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Real-time status tracking for Sukanya Samriddhi, Post Office, Senior Citizen & Bank FD accounts.
+              </p>
+            </div>
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200">
+              {userDepositApps.length} Accounts Found
+            </span>
+          </div>
+
+          {userDepositApps.length === 0 ? (
+            <div className="text-center py-12 space-y-3">
+              <ShieldCheck className="w-12 h-12 text-slate-300 mx-auto" />
+              <h4 className="text-base font-bold text-slate-700 dark:text-slate-300">
+                No Savings Deposit Accounts Applied Yet
+              </h4>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                Go to the Savings & Deposits page to apply for Sukanya Samriddhi, Post Office FD, or High Return Bank Deposit Schemes.
+              </p>
+              {onSelectTab && (
+                <button
+                  onClick={() => onSelectTab('deposits' as any)}
+                  className="mt-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md"
+                >
+                  Explore & Apply Savings Schemes
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {userDepositApps.map((app: any) => (
+                <div key={app.id || app.trackingId} className="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/60 dark:border-slate-700/60 pb-3">
+                    <div>
+                      <span className="text-xs font-mono font-bold text-blue-600 dark:text-blue-400 block">
+                        Tracking ID: {app.trackingId || app.id}
+                      </span>
+                      <h4 className="text-base font-extrabold text-slate-900 dark:text-white font-serif mt-0.5">
+                        {app.schemeName}
+                      </h4>
+                    </div>
+                    <span className={`self-start sm:self-auto text-xs font-extrabold px-3 py-1 rounded-full capitalize ${
+                      app.status === 'sanctioned' || app.status === 'disbursed'
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                        : app.status === 'rejected'
+                        ? 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300'
+                        : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                    }`}>
+                      Status: {app.status || 'submitted'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                    <div>
+                      <span className="text-slate-400 block">Deposit Amount:</span>
+                      <strong className="text-sm font-mono text-slate-900 dark:text-white">₹{Number(app.depositAmount || 5000).toLocaleString('en-IN')}</strong>
+                      <span className="text-[10px] text-slate-500 block uppercase font-bold">{app.investmentType === 'sip' ? `SIP (${app.frequency || 'Monthly'})` : 'LumpSum (FD)'}</span>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-400 block">Tenure Duration:</span>
+                      <strong className="text-sm font-mono text-slate-900 dark:text-white">{app.tenureYears || 5} Yrs ({app.maturityDays || 1826} Days)</strong>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-400 block">Expected Maturity Return:</span>
+                      <strong className="text-sm font-mono text-emerald-600 dark:text-emerald-400 font-extrabold">₹{Number(app.expectedMaturityAmount || 15000).toLocaleString('en-IN')}</strong>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-400 block">Nominee Person:</span>
+                      <strong className="text-slate-800 dark:text-slate-200">{app.nomineeName || 'N/A'} ({app.nomineeRelation || 'Self'})</strong>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900/60 text-xs text-blue-900 dark:text-blue-200 flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
+                      <span>Bank Account: <strong className="font-mono">{app.bankName || 'State Bank of India'} ({app.bankAccountNo || '987654321098'})</strong></span>
+                    </span>
+                    <span className="font-mono text-slate-500">IFSC: {app.bankIfsc || 'SBIN0001234'}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+      <>
       {/* Applications Selector Horizontal Bar */}
       {displayApps.length > 0 ? (
         <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none">
@@ -731,6 +887,8 @@ export const ApplicationTracker: React.FC<TrackerProps> = ({
             Apply for any government loan scheme or enter your Tracking ID in the search box above.
           </p>
         </div>
+      )}
+      </>
       )}
       </div>
     </div>
