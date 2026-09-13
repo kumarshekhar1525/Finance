@@ -478,10 +478,10 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
           extractedData.subsidyEligible = '35% Govt. Grant';
         }
 
-        if (docType === 'nominee_aadhaar' as any) {
-          setNomineeAadhaarPhoto(realImagePhoto);
-        } else if (docType === 'handwritten_doc' as any) {
-          setHandwrittenDocPhoto(realImagePhoto);
+        if (docType === ('nominee_aadhaar' as any)) {
+          setNomineeAadhaarPhoto(compressedDataUrl);
+        } else if (docType === ('handwritten_doc' as any)) {
+          setHandwrittenDocPhoto(compressedDataUrl);
         }
 
         const newDoc: UploadedDoc & Record<string, any> = {
@@ -508,10 +508,10 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
           uploadDate: new Date().toISOString(),
           status,
           rejectionReason,
-          previewUrl: realImagePhoto,
-          photo_url: realImagePhoto,
-          doc_photo: realImagePhoto,
-          document_image: realImagePhoto,
+          previewUrl: compressedDataUrl,
+          photo_url: compressedDataUrl,
+          doc_photo: compressedDataUrl,
+          document_image: compressedDataUrl,
           extractedData,
         };
 

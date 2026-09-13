@@ -68,7 +68,7 @@ export const ApplicationTracker: React.FC<TrackerProps> = ({
     }
 
     // Default: match active demo user (Shekhar / Ramesh) to prevent showing everyone's apps
-    return cleanAppAadhaar === '987654321098' || cleanAppPhone === '9876543210';
+    return cleanAppAadhaar === '987654321098' || appPhone.includes('9876543210');
   });
 
   const [selectedAppId, setSelectedAppId] = useState<string>(

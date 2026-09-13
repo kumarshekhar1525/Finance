@@ -13,7 +13,8 @@ import {
   FileText,
   LogOut,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  Landmark
 } from 'lucide-react';
 import { SupportedLanguage, UserProfile, PushNotification } from '../types';
 import { languageNames, translations } from '../lib/i18n';

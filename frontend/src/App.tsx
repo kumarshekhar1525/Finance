@@ -284,7 +284,7 @@ export default function App() {
       purpose: 'Modern tailoring & embroidery machinery expansion',
       appliedDate: new Date(Date.now() - 3600000).toISOString(),
       createdAt: new Date(Date.now() - 3600000).toISOString(),
-      status: 'under_review',
+      status: 'bank_review',
       documents: [
         {
           id: 'doc-2-1',
@@ -405,7 +405,7 @@ export default function App() {
   // State: Modals
   const [isAadhaarModalOpen, setIsAadhaarModalOpen] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
-  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | 'forgot' | 'aadhaar'>('login');
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | 'forgot' | 'aadhaar' | 'admin'>('login');
   const [isBiometricModalOpen, setIsBiometricModalOpen] = useState<boolean>(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState<boolean>(false);

@@ -35,7 +35,7 @@ import {
   Headphones,
   FileText
 } from 'lucide-react';
-import { LoanApplication, SearchLog, ApplicationStatus, Scheme, HelpdeskChatTicket, HelpdeskChatMessage, RecycleBinItem, RecycleCategory } from '../types';
+import { LoanApplication, SearchLog, ApplicationStatus, Scheme, HelpdeskChatTicket, HelpdeskChatMessage, RecycleBinItem, RecycleCategory, DispatchLog } from '../types';
 
 interface AdminDashboardProps {
   applications: LoanApplication[];
