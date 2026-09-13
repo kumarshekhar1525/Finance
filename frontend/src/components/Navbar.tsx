@@ -29,8 +29,8 @@ interface NavbarProps {
   onOpenProfile: () => void;
   notifications: PushNotification[];
   onOpenNotifications: () => void;
-  activeTab: 'schemes' | 'applications' | 'calculator' | 'eligibility' | 'admin';
-  onSelectTab: (tab: 'schemes' | 'applications' | 'calculator' | 'eligibility' | 'admin') => void;
+  activeTab: 'schemes' | 'applications' | 'calculator' | 'eligibility' | 'deposits' | 'admin';
+  onSelectTab: (tab: 'schemes' | 'applications' | 'calculator' | 'eligibility' | 'deposits' | 'admin') => void;
   isAdmin: boolean;
   onToggleAdmin: () => void;
   onOpenApplyForm?: () => void;
@@ -132,6 +132,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>{currentLang === 'hi' ? 'दस्तावेज़ पात्रता चेकर' : 'Check Eligibility'}</span>
+            </button>
+
+            <button
+              id="nav-tab-deposits"
+              onClick={() => onSelectTab('deposits')}
+              className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 ${
+                activeTab === 'deposits'
+                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Landmark className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>{currentLang === 'hi' ? 'बचत व ब्याज योजनाएं' : 'Savings & Deposits'}</span>
             </button>
 
             <button

@@ -42,6 +42,12 @@ import {
 import { 
   DocumentEligibilityChecker 
 } from './components/DocumentEligibilityChecker';
+import {
+  DepositSchemeCatalog
+} from './components/DepositSchemeCatalog';
+import {
+  DepositApplicationModal
+} from './components/DepositApplicationModal';
 import { 
   SupportedLanguage, 
   UserProfile, 
@@ -49,7 +55,9 @@ import {
   LoanApplication, 
   PushNotification, 
   BiometricRecord,
-  ApplicationStatus
+  ApplicationStatus,
+  DepositScheme,
+  DepositApplication
 } from './types';
 import { SCHEMES_DATA } from './data/schemes';
 import { ShieldCheck, Lock, PhoneCall, HelpCircle, ArrowRight, ExternalLink, AlertCircle } from 'lucide-react';
@@ -113,7 +121,9 @@ export default function App() {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
 
   // State: Navigation Tabs & Admin Toggle
-  const [activeTab, setActiveTab] = useState<'schemes' | 'applications' | 'calculator' | 'eligibility' | 'admin'>('schemes');
+  const [activeTab, setActiveTab] = useState<'schemes' | 'applications' | 'calculator' | 'eligibility' | 'deposits' | 'admin'>('schemes');
+  const [selectedDepositScheme, setSelectedDepositScheme] = useState<DepositScheme | null>(null);
+  const [depositApplications, setDepositApplications] = useState<DepositApplication[]>([]);
   const [isAdmin, setIsAdmin] = useState<boolean>(() => {
     return localStorage.getItem('jandhan_is_admin') === 'true' || sessionStorage.getItem('jandhan_admin_auth') === 'true';
   });
@@ -910,6 +920,11 @@ export default function App() {
               setSelectedSchemeForApply(matched);
             }}
           />
+        ) : activeTab === 'deposits' ? (
+          <DepositSchemeCatalog
+            currentLang={currentLang}
+            onSelectSchemeToApply={(scheme) => setSelectedDepositScheme(scheme)}
+          />
         ) : (
           <SchemeCatalog
             schemes={schemes}
@@ -923,6 +938,31 @@ export default function App() {
 
       {/* AI Chatbot Floating Assistant */}
       <AIChatbot currentLang={currentLang} user={user} applications={applications} />
+
+      {/* Deposit Application Modal */}
+      {selectedDepositScheme && (
+        <DepositApplicationModal
+          scheme={selectedDepositScheme}
+          user={user}
+          onClose={() => setSelectedDepositScheme(null)}
+          onSubmitSuccess={(newDepApp) => {
+            setDepositApplications((prev) => [newDepApp, ...prev]);
+            setSelectedDepositScheme(null);
+            setActiveTab('applications');
+            setNotifications((prev) => [
+              {
+                id: `notif-${Date.now()}`,
+                title: 'Deposit Application Submitted!',
+                message: `Your application (${newDepApp.trackingId}) for ${newDepApp.schemeName} has been submitted successfully.`,
+                timestamp: new Date().toISOString(),
+                read: false,
+                type: 'system',
+              },
+              ...prev,
+            ]);
+          }}
+        />
+      )}
 
       {/* Comprehensive Login / Signup / Forgot Password via OTP Modal */}
       <AuthModal

@@ -288,3 +288,53 @@ export interface RecycleBinItem {
   deletedAt: string;
   originalData: any;
 }
+
+export interface DepositScheme {
+  id: string;
+  name: string;
+  nameHi: string;
+  provider: 'post_office' | 'sbi' | 'pnb' | 'hdfc' | 'icici' | 'axis' | 'bob' | 'canara' | 'govt_general';
+  category: 'girls' | 'women' | 'senior_citizens' | 'boys_adults' | 'post_office' | 'public_bank' | 'private_bank' | 'pension';
+  interestRate: number; // percentage p.a.
+  minDeposit: number;
+  maxDeposit: number;
+  tenureYears: number;
+  targetAudience: string;
+  targetAudienceHi: string;
+  taxBenefit: boolean; // Section 80C
+  guaranteedByGovt: boolean;
+  officialPortalUrl: string;
+  featuresHi: string[];
+  requiredDocs: string[];
+  iconName: string;
+}
+
+export interface DepositApplication {
+  id: string;
+  trackingId: string;
+  applicantAadhaar: string;
+  applicantPan?: string;
+  applicantName: string;
+  applicantPhone: string;
+  applicantEmail: string;
+  applicantState: string;
+  applicantCategory: BeneficiaryFilter;
+  depositAmount: number;
+  tenureYears: number;
+  expectedMaturityAmount: number;
+  schemeId: string;
+  schemeName: string;
+  nomineeName?: string;
+  nomineeRelation?: string;
+  nomineeAadhaar?: string;
+  nomineeAadhaarPhoto?: string;
+  applicantPhoto?: string;
+  aadhaarDoc?: string;
+  panDoc?: string;
+  handwrittenDoc?: string;
+  status: ApplicationStatus;
+  appliedDate: string;
+  documents: UploadedDoc[];
+  biometric?: BiometricRecord;
+}
+

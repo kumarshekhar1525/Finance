@@ -1461,20 +1461,53 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
               </p>
             </div>
 
-            {/* Document Upload Boxes */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* PAN Card */}
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                    <FileText className="w-4 h-4 text-emerald-600" /> PAN Card
-                  </span>
-                  <span className="text-[10px] text-red-500 font-bold">*Required</span>
+            {/* Document Upload Boxes - Vertical Stacked Shape */}
+            <div className="space-y-4 flex flex-col">
+              {/* Applicant Aadhaar Card Photo */}
+              <div className="p-4 rounded-2xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+                    💳
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
+                      <span>Applicant Aadhaar Card Photo (आवेदक का आधार कार्ड)</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-600 text-white font-bold">UIDAI Required</span>
+                    </h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Front & Back photo scan of 12-digit Aadhaar Card
+                    </p>
+                  </div>
                 </div>
-                <label className="block w-full py-2 px-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center cursor-pointer hover:border-emerald-500 transition-colors">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center gap-1.5">
-                    <Upload className="w-3.5 h-3.5" /> Upload PAN (PDF/JPG)
-                  </span>
+                <label className="py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer transition-all shadow-xs shrink-0 flex items-center gap-1.5">
+                  <Upload className="w-3.5 h-3.5" /> Upload Aadhaar Photo
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => handleFileUpload('aadhaar', e)}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {/* PAN Card */}
+              <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-sm shrink-0">
+                    🆔
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
+                      <span>PAN Card Photo (पैन कार्ड फोटो)</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 font-bold">*Required</span>
+                    </h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Clear scan of 10-character Income Tax PAN card
+                    </p>
+                  </div>
+                </div>
+                <label className="py-2 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold cursor-pointer transition-all border border-slate-300 dark:border-slate-700 shrink-0 flex items-center gap-1.5">
+                  <Upload className="w-3.5 h-3.5" /> Upload PAN Photo
                   <input
                     type="file"
                     accept=".pdf,.jpg,.jpeg,.png"
@@ -1485,17 +1518,23 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
               </div>
 
               {/* Bank Statement */}
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                    <FileText className="w-4 h-4 text-emerald-600" /> Bank Statement (6 Months)
-                  </span>
-                  <span className="text-[10px] text-red-500 font-bold">*Required</span>
+              <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-sm shrink-0">
+                    🏦
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
+                      <span>Bank Statement / Passbook Photo (बैंक खाता विवरण)</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 font-bold">*Required</span>
+                    </h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Last 6 months bank statement or passbook first page scan
+                    </p>
+                  </div>
                 </div>
-                <label className="block w-full py-2 px-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center cursor-pointer hover:border-emerald-500 transition-colors">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center gap-1.5">
-                    <Upload className="w-3.5 h-3.5" /> Upload Bank Statement
-                  </span>
+                <label className="py-2 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold cursor-pointer transition-all border border-slate-300 dark:border-slate-700 shrink-0 flex items-center gap-1.5">
+                  <Upload className="w-3.5 h-3.5" /> Upload Bank Passbook
                   <input
                     type="file"
                     accept=".pdf,.jpg,.jpeg,.png"
@@ -1505,39 +1544,24 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
                 </label>
               </div>
 
-              {/* Income / ITR / Project Report */}
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                    <FileText className="w-4 h-4 text-emerald-600" /> Income Proof / DPR
-                  </span>
-                  <span className="text-[10px] text-slate-400">Optional</span>
-                </div>
-                <label className="block w-full py-2 px-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center cursor-pointer hover:border-emerald-500 transition-colors">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center gap-1.5">
-                    <Upload className="w-3.5 h-3.5" /> Upload Income Proof
-                  </span>
-                  <input
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) => handleFileUpload('income_proof', e)}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-
               {/* Nominee Aadhaar Card Upload Box */}
-              <div className="p-4 rounded-xl border border-teal-200 dark:border-teal-900/60 bg-teal-50/40 dark:bg-teal-950/20 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-teal-900 dark:text-teal-200 flex items-center gap-1.5">
-                    <FileText className="w-4 h-4 text-teal-600" /> Nominee Aadhaar Card Photo
-                  </span>
-                  <span className="text-[10px] text-teal-600 font-bold">Nominee Verification</span>
+              <div className="p-4 rounded-2xl border border-teal-200 dark:border-teal-900/60 bg-teal-50/40 dark:bg-teal-950/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+                    🤝
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-teal-950 dark:text-teal-200 text-xs flex items-center gap-1.5">
+                      <span>Nominee Aadhaar Card Photo (नॉमिनी आधार कार्ड)</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-teal-600 text-white font-bold">Nominee Audit</span>
+                    </h4>
+                    <p className="text-[11px] text-teal-700/80 dark:text-teal-300/80 mt-0.5">
+                      12-digit Aadhaar Card photo scan of Nominee
+                    </p>
+                  </div>
                 </div>
-                <label className="block w-full py-2 px-3 rounded-lg border border-dashed border-teal-300 dark:border-teal-800 bg-white dark:bg-slate-900 text-center cursor-pointer hover:border-teal-500 transition-colors">
-                  <span className="text-xs text-teal-700 dark:text-teal-300 flex items-center justify-center gap-1.5">
-                    <Upload className="w-3.5 h-3.5" /> Upload Nominee Aadhaar
-                  </span>
+                <label className="py-2 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold cursor-pointer transition-all shadow-xs shrink-0 flex items-center gap-1.5">
+                  <Upload className="w-3.5 h-3.5" /> Upload Nominee Aadhaar
                   <input
                     type="file"
                     accept=".pdf,.jpg,.jpeg,.png"
@@ -1548,17 +1572,23 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
               </div>
 
               {/* Handwritten Application / Signature Upload Box */}
-              <div className="p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/20 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
-                    <FileText className="w-4 h-4 text-indigo-600" /> ✍️ Handwritten Application / Signature
-                  </span>
-                  <span className="text-[10px] text-indigo-600 font-bold">Optional</span>
+              <div className="p-4 rounded-2xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+                    ✍️
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-indigo-950 dark:text-indigo-200 text-xs flex items-center gap-1.5">
+                      <span>Handwritten Application / Signature (हस्तलिखित आवेदन / हस्ताक्षर)</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-600 text-white font-bold">Optional</span>
+                    </h4>
+                    <p className="text-[11px] text-indigo-700/80 dark:text-indigo-300/80 mt-0.5">
+                      Self-signed handwritten declaration letter or signature scan
+                    </p>
+                  </div>
                 </div>
-                <label className="block w-full py-2 px-3 rounded-lg border border-dashed border-indigo-300 dark:border-indigo-800 bg-white dark:bg-slate-900 text-center cursor-pointer hover:border-indigo-500 transition-colors">
-                  <span className="text-xs text-indigo-700 dark:text-indigo-300 flex items-center justify-center gap-1.5">
-                    <Upload className="w-3.5 h-3.5" /> Upload Handwritten Doc / Sign
-                  </span>
+                <label className="py-2 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer transition-all shadow-xs shrink-0 flex items-center gap-1.5">
+                  <Upload className="w-3.5 h-3.5" /> Upload Handwritten Doc
                   <input
                     type="file"
                     accept=".pdf,.jpg,.jpeg,.png"
