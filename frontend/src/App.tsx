@@ -840,7 +840,7 @@ export default function App() {
             currentLang={currentLang}
             user={user}
             onSelectSchemeToApply={(schemeId) => {
-              const matched = schemes.find((s) => s.id === schemeId) || schemes[0];
+              const matched = (schemes && schemes.length > 0 ? schemes.find((s) => s.id === schemeId) : null) || SCHEMES_DATA[0];
               setSelectedSchemeForApply(matched);
             }}
             onNavigateToSchemes={() => setActiveTab('schemes')}
@@ -851,8 +851,8 @@ export default function App() {
             onApplyWithConfig={(amt, tenure) => {
               setPrefillCalcAmount(amt);
               setPrefillCalcTenure(tenure);
-              // Pick first relevant scheme
-              setSelectedSchemeForApply(schemes[0]);
+              const matched = (schemes && schemes.length > 0 ? schemes[0] : null) || SCHEMES_DATA[0];
+              setSelectedSchemeForApply(matched);
             }}
           />
         ) : (

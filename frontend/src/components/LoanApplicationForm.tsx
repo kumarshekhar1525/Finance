@@ -22,9 +22,10 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { Scheme, UploadedDoc, BiometricRecord, LoanApplication, BeneficiaryFilter, UserProfile } from '../types';
+import { SCHEMES_DATA } from '../data/schemes';
 
 interface LoanApplicationFormProps {
-  scheme: Scheme;
+  scheme?: Scheme | null;
   user: UserProfile | null;
   onCancel: () => void;
   onSubmitSuccess: (app: LoanApplication) => void;
@@ -36,7 +37,7 @@ interface LoanApplicationFormProps {
 }
 
 export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
-  scheme,
+  scheme: providedScheme,
   user,
   onCancel,
   onSubmitSuccess,
@@ -46,11 +47,13 @@ export const LoanApplicationForm: React.FC<LoanApplicationFormProps> = ({
   prefillTenure,
   onUpdateUser,
 }) => {
+  const scheme: Scheme = providedScheme || SCHEMES_DATA[0];
+
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [requestedAmount, setRequestedAmount] = useState<number>(prefillAmount || scheme.minAmount || 200000);
-  const [tenureMonths, setTenureMonths] = useState<number>(prefillTenure || scheme.tenureMonths || 60);
+  const [requestedAmount, setRequestedAmount] = useState<number>(prefillAmount || scheme?.minAmount || 200000);
+  const [tenureMonths, setTenureMonths] = useState<number>(prefillTenure || scheme?.tenureMonths || 60);
   const [purpose, setPurpose] = useState<string>('');
-  const [loanTypePreference, setLoanTypePreference] = useState<string>(scheme.category || 'business_loan');
+  const [loanTypePreference, setLoanTypePreference] = useState<string>(scheme?.category || 'business_loan');
   const [subsidyRequirement, setSubsidyRequirement] = useState<string>('35_percent_subsidy');
   const [firmOrInstitutionName, setFirmOrInstitutionName] = useState<string>('');
   // Applicant details state
