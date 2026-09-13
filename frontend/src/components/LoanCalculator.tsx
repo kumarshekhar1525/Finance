@@ -214,14 +214,23 @@ export const LoanCalculator: React.FC<LoanCalculatorProps> = ({
             <div className="lg:col-span-7 bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-7">
               {/* Loan Amount Slider */}
               <div>
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                   <label className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                     <IndianRupee className="w-4 h-4 text-blue-600" />
                     {t.principalAmount}
                   </label>
-                  <span className="text-base sm:text-xl font-mono font-extrabold text-blue-600 dark:text-blue-400">
-                    {formatINR(loanAmount)}
-                  </span>
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/90 px-3 py-1 rounded-xl border border-blue-500/40 focus-within:ring-2 focus-within:ring-blue-500">
+                    <span className="text-xs font-extrabold text-blue-600 dark:text-blue-400">₹</span>
+                    <input
+                      type="number"
+                      min={10000}
+                      max={50000000}
+                      step={10000}
+                      value={loanAmount}
+                      onChange={(e) => setLoanAmount(Math.max(0, Number(e.target.value)))}
+                      className="w-28 sm:w-36 bg-transparent text-sm sm:text-base font-mono font-extrabold text-blue-600 dark:text-blue-400 outline-none"
+                    />
+                  </div>
                 </div>
                 <input
                   id="slider-loan-amount"
@@ -254,14 +263,23 @@ export const LoanCalculator: React.FC<LoanCalculatorProps> = ({
 
               {/* Interest Rate Slider */}
               <div>
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                   <label className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                     <Percent className="w-4 h-4 text-blue-600" />
                     {t.interestRate}
                   </label>
-                  <span className="text-base sm:text-xl font-mono font-extrabold text-blue-600 dark:text-blue-400">
-                    {interestRate}% p.a.
-                  </span>
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/90 px-3 py-1 rounded-xl border border-blue-500/40 focus-within:ring-2 focus-within:ring-blue-500">
+                    <input
+                      type="number"
+                      min={0.1}
+                      max={30.0}
+                      step={0.1}
+                      value={interestRate}
+                      onChange={(e) => setInterestRate(Math.max(0.1, Number(e.target.value)))}
+                      className="w-16 bg-transparent text-sm sm:text-base font-mono font-extrabold text-blue-600 dark:text-blue-400 outline-none text-right"
+                    />
+                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400">% p.a.</span>
+                  </div>
                 </div>
                 <input
                   id="slider-interest-rate"
@@ -308,14 +326,23 @@ export const LoanCalculator: React.FC<LoanCalculatorProps> = ({
 
               {/* Tenure Slider */}
               <div>
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                   <label className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                     <Calendar className="w-4 h-4 text-blue-600" />
                     {t.tenure} (Tenure)
                   </label>
-                  <span className="text-base sm:text-xl font-mono font-extrabold text-blue-600 dark:text-blue-400">
-                    {tenureYears} Years ({tenureMonths} Months)
-                  </span>
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/90 px-3 py-1 rounded-xl border border-blue-500/40 focus-within:ring-2 focus-within:ring-blue-500">
+                    <input
+                      type="number"
+                      min={1}
+                      max={35}
+                      step={1}
+                      value={tenureYears}
+                      onChange={(e) => setTenureYears(Math.max(1, Number(e.target.value)))}
+                      className="w-14 bg-transparent text-sm sm:text-base font-mono font-extrabold text-blue-600 dark:text-blue-400 outline-none text-right"
+                    />
+                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400">Yrs</span>
+                  </div>
                 </div>
                 <input
                   id="slider-tenure-years"
@@ -442,14 +469,23 @@ export const LoanCalculator: React.FC<LoanCalculatorProps> = ({
 
               {/* Deposit / Installment Amount Slider */}
               <div>
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                   <label className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                     <IndianRupee className="w-4 h-4 text-emerald-600" />
                     {activeCalcTab === 'lumpsum' ? (isEn ? 'LumpSum Deposit Amount (एकमुश्त जमा राशि)' : 'एकमुश्त जमा राशि') : (isEn ? 'SIP Installment Amount (मासिक एसआईपी किश्त)' : 'एसआईपी किश्त राशि')}
                   </label>
-                  <span className="text-base sm:text-xl font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
-                    {formatINR(depositAmount)}
-                  </span>
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/90 px-3 py-1 rounded-xl border border-emerald-500/40 focus-within:ring-2 focus-within:ring-emerald-500">
+                    <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">₹</span>
+                    <input
+                      type="number"
+                      min={100}
+                      max={10000000}
+                      step={500}
+                      value={depositAmount}
+                      onChange={(e) => setDepositAmount(Math.max(0, Number(e.target.value)))}
+                      className="w-28 sm:w-36 bg-transparent text-sm sm:text-base font-mono font-extrabold text-emerald-600 dark:text-emerald-400 outline-none"
+                    />
+                  </div>
                 </div>
                 <input
                   type="range"
@@ -481,14 +517,23 @@ export const LoanCalculator: React.FC<LoanCalculatorProps> = ({
 
               {/* Expected Return Rate Slider */}
               <div>
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                   <label className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                     <Percent className="w-4 h-4 text-emerald-600" />
                     {isEn ? 'Expected Interest Rate (वार्षिक ब्याज दर)' : 'वार्षिक ब्याज दर'}
                   </label>
-                  <span className="text-base sm:text-xl font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
-                    {savingsInterestRate}% p.a.
-                  </span>
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/90 px-3 py-1 rounded-xl border border-emerald-500/40 focus-within:ring-2 focus-within:ring-emerald-500">
+                    <input
+                      type="number"
+                      min={0.1}
+                      max={30.0}
+                      step={0.1}
+                      value={savingsInterestRate}
+                      onChange={(e) => setSavingsInterestRate(Math.max(0.1, Number(e.target.value)))}
+                      className="w-16 bg-transparent text-sm sm:text-base font-mono font-extrabold text-emerald-600 dark:text-emerald-400 outline-none text-right"
+                    />
+                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">% p.a.</span>
+                  </div>
                 </div>
                 <input
                   type="range"
@@ -534,14 +579,23 @@ export const LoanCalculator: React.FC<LoanCalculatorProps> = ({
 
               {/* Investment Tenure */}
               <div>
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                   <label className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                     <Calendar className="w-4 h-4 text-emerald-600" />
                     {isEn ? 'Investment Duration (अवधि)' : 'जमा अवधि'}
                   </label>
-                  <span className="text-base sm:text-xl font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
-                    {savingsTenureYears} Years ({savingsMaturityDays} Days)
-                  </span>
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/90 px-3 py-1 rounded-xl border border-emerald-500/40 focus-within:ring-2 focus-within:ring-emerald-500">
+                    <input
+                      type="number"
+                      min={1}
+                      max={35}
+                      step={1}
+                      value={savingsTenureYears}
+                      onChange={(e) => setSavingsTenureYears(Math.max(1, Number(e.target.value)))}
+                      className="w-14 bg-transparent text-sm sm:text-base font-mono font-extrabold text-emerald-600 dark:text-emerald-400 outline-none text-right"
+                    />
+                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Yrs</span>
+                  </div>
                 </div>
                 <input
                   type="range"
